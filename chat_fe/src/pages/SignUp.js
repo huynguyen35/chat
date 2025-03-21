@@ -16,6 +16,10 @@ import {createTheme, ThemeProvider, styled} from '@mui/material/styles';
 import getSignUpTheme from '../customizations/getSignUpTheme';
 import {GoogleIcon, FacebookIcon, SitemarkIcon} from './CustomIcon';
 import TemplateFrame from "../customizations/TemplateFrame";
+import {login, signUp} from "../callAPI/API";
+import {useToast} from "@chakra-ui/react";
+import {useNavigate} from "react-router-dom";
+import {ChatState} from "../Provider";
 
 const Card = styled(MuiCard)(({theme}) => ({
     display: 'flex',
@@ -66,6 +70,10 @@ export default function SignUp() {
     const [passwordErrorMessage, setPasswordErrorMessage] = React.useState('');
     const [passwordRepeatError, setPasswordRepeatError] = React.useState(false);
     const [passwordRepeatErrorMessage, setPasswordRepeatErrorMessage] = React.useState('');
+
+    const {setUser} = ChatState();
+    const toast = useToast();
+    const navigate = useNavigate();
 
     // This code only runs on the client side, to determine the system color preference
     React.useEffect(() => {
@@ -163,20 +171,44 @@ export default function SignUp() {
         return isValid;
     };
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
+
         if (emailError || passwordError || passwordRepeatError || firstNameError || lastNameError) {
             event.preventDefault();
             return;
         }
-        const data = new FormData(event.currentTarget);
-        console.log({
-            email: data.get('email'),
-            password: data.get('password'),
-            firstName: data.get('firstName'),
-            lastName: data.get('lastName'),
-        });
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const firstName = document.getElementById('firstName').value;
+        const lastName = document.getElementById('lastName').value;
+        const data = {
+            email: email,
+            password: password,
+            firstName: firstName,
+            lastName: lastName,
+        };
 
-        // gọi api đăng ký tài khoản ở đây
+        try {
+            const response = await signUp(data);
+            toast({
+                title: `Đăng ký thành công!`,
+                status: "success",
+                duration: 5000,
+                isClosable: true,
+                position: "bottom",
+            });
+            setUser(response);
+            localStorage.setItem("userInfo", JSON.stringify(response));
+            navigate("/");
+        } catch (error) {
+            toast({
+                title: error?.data,
+                status: "error",
+                duration: 5000,
+                isClosable: true,
+                position: "bottom",
+            });
+        }
 
     };
 

@@ -23,19 +23,19 @@ public class AuthenticationController {
 
     // register user
     @PostMapping("/register")
-    public ResponseEntity register(@RequestBody RegisterRequest registerRequest) {
-        return ResponseEntity.ok(userService.register(registerRequest));
+    public ResponseEntity<?> register(@RequestBody RegisterRequest registerRequest) {
+        return userService.register(registerRequest);
     }
 
     // login user
     @PostMapping("/login")
-    public ResponseEntity login(@RequestBody LoginRequest loginRequest) {
-        return ResponseEntity.ok(userService.login(loginRequest));
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
+        return userService.login(loginRequest);
     }
 
     // logout user
     @GetMapping("/logout")
-    public ResponseEntity logout() {
-        return ResponseEntity.ok(userService.logout());
+    public ResponseEntity<?> logout() {
+        return userService.logout();
     }
 }

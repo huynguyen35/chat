@@ -19,7 +19,8 @@ import AppTheme from '../AppTheme';
 import ColorModeSelect from '../ColorModeSelect';
 import {useNavigate} from "react-router-dom";
 import {ChatState} from "../Provider";
-import { useToast } from "@chakra-ui/toast";
+import {useToast} from "@chakra-ui/react";
+import {login} from "../callAPI/API";
 
 
 const Card = styled(MuiCard)(({theme}) => ({
@@ -64,16 +65,16 @@ const SignInContainer = styled(Stack)(({theme}) => ({
 }));
 
 export default function Login(props) {
+    const toast = useToast();
     const [emailError, setEmailError] = React.useState(false);
     const [emailErrorMessage, setEmailErrorMessage] = React.useState('');
     const [passwordError, setPasswordError] = React.useState(false);
     const [passwordErrorMessage, setPasswordErrorMessage] = React.useState('');
     const [open, setOpen] = React.useState(false);
-    const toast = useToast();
     const {setUser} = ChatState();
     const navigate = useNavigate();
 
-    const {user} = ChatState();
+    // const {user} = ChatState();
 
     const handleClickOpen = () => {
         setOpen(true);
@@ -83,11 +84,12 @@ export default function Login(props) {
         setOpen(false);
     };
 
-    const handleSubmit = (event) => {
-        if (emailError || passwordError) {
-            event.preventDefault();
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+
+        if (!validateInputs()) {
             toast({
-                title: "Please Fill all the Feilds",
+                title: emailErrorMessage === '' ? passwordErrorMessage : emailErrorMessage,
                 status: "warning",
                 duration: 5000,
                 isClosable: true,
@@ -95,24 +97,39 @@ export default function Login(props) {
             });
             return;
         }
+
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+
         const data = {
-            _id: "1",
-            name: "Huy",
-            pic: "kasjdhkashd",
-            email: "abc@gmailo.com"
+            email: email,
+            password: password
         }
-        toast({
-            title: "Login Successful",
-            status: "success",
-            duration: 5000,
-            isClosable: true,
-            position: "bottom",
-        });
-        setUser(data);
-        localStorage.setItem("userInfo", JSON.stringify(data));
-        console.log(user)
-        // navigate("/home");
+        try {
+            const response = await login(data);
+            toast({
+                title: `Đăng nhập thành công!`,
+                status: "success",
+                duration: 5000,
+                isClosable: true,
+                position: "bottom",
+            });
+            setUser(response);
+            localStorage.setItem("userInfo", JSON.stringify(response));
+            navigate("/");
+        } catch (error) {
+            toast({
+                title: error?.data,
+                status: "error",
+                duration: 5000,
+                isClosable: true,
+                position: "bottom",
+            });
+        }
+
+
     };
+
 
     const validateInputs = () => {
         const email = document.getElementById('email');
@@ -122,7 +139,7 @@ export default function Login(props) {
 
         if (!email.value || !/\S+@\S+\.\S+/.test(email.value)) {
             setEmailError(true);
-            setEmailErrorMessage('Please enter a valid email address.');
+            setEmailErrorMessage('Vui lòng nhập đúng định dạng email.');
             isValid = false;
         } else {
             setEmailError(false);
@@ -131,7 +148,7 @@ export default function Login(props) {
 
         if (!password.value || password.value.length < 6) {
             setPasswordError(true);
-            setPasswordErrorMessage('Password must be at least 6 characters long.');
+            setPasswordErrorMessage('Mật khẩu phải có ít nhất 6 ký tự.');
             isValid = false;
         } else {
             setPasswordError(false);
@@ -153,7 +170,7 @@ export default function Login(props) {
                         variant="h4"
                         sx={{width: '100%', fontSize: 'clamp(2rem, 10vw, 2.15rem)'}}
                     >
-                        Sign in
+                        Đăng nhập
                     </Typography>
                     <Box
                         component="form"
@@ -186,7 +203,7 @@ export default function Login(props) {
                         </FormControl>
                         <FormControl>
                             <Box sx={{display: 'flex', justifyContent: 'space-between'}}>
-                                <FormLabel htmlFor="password">Password</FormLabel>
+                                <FormLabel htmlFor="password">Mật khẩu</FormLabel>
                                 <Link
                                     component="button"
                                     type="button"
@@ -194,7 +211,7 @@ export default function Login(props) {
                                     variant="body2"
                                     sx={{alignSelf: 'baseline'}}
                                 >
-                                    Forgot your password?
+                                    Quên mật khẩu?
                                 </Link>
                             </Box>
                             <TextField
@@ -214,7 +231,7 @@ export default function Login(props) {
                         </FormControl>
                         <FormControlLabel
                             control={<Checkbox value="remember" color="primary"/>}
-                            label="Remember me"
+                            label="Nhớ mật khẩu"
                         />
                         <ForgotPassword open={open} handleClose={handleClose}/>
                         <Button
@@ -223,17 +240,17 @@ export default function Login(props) {
                             variant="contained"
                             onClick={validateInputs}
                         >
-                            Login
+                            Đăng nhập
                         </Button>
                         <Typography sx={{textAlign: 'center'}}>
-                            Don&apos;t have an account?{' '}
+                            Chưa có tài khoản?{' '}
                             <span>
                 <Link
                     href="/signup"
                     variant="body2"
                     sx={{alignSelf: 'center'}}
                 >
-                  Sign up
+                  Đăng ký
                 </Link>
               </span>
                         </Typography>
@@ -246,7 +263,7 @@ export default function Login(props) {
                             onClick={() => alert('Sign in with Google')}
                             startIcon={<GoogleIcon/>}
                         >
-                            Sign in with Google
+                            Đăng nhập với Google
                         </Button>
                         <Button
                             fullWidth
@@ -254,7 +271,7 @@ export default function Login(props) {
                             onClick={() => alert('Sign in with Facebook')}
                             startIcon={<FacebookIcon/>}
                         >
-                            Sign in with Facebook
+                            Đăng nhập với Facebook
                         </Button>
                     </Box>
                 </Card>

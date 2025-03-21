@@ -4,5 +4,11 @@
   "main": "index.js",
   "repository": "https://github.com/huynguyen35/chat.git",
   "author": "huynguyen35 <huynguyen.79039@gmail.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@chakra-ui/react": "^3.13.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "framer-motion": "^12.5.0"
+  }
 }

@@ -21,13 +21,12 @@ function ForgotPassword({ open, handleClose }) {
                 },
             }}
         >
-            <DialogTitle>Reset password</DialogTitle>
+            <DialogTitle>Lấy lại mật khẩu</DialogTitle>
             <DialogContent
                 sx={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%' }}
             >
                 <DialogContentText>
-                    Enter your account&apos;s email address, and we&apos;ll send you a link to
-                    reset your password.
+                    Nhập địa chỉ email của bạn để nhận hướng dẫn đặt lại mật khẩu trong email.
                 </DialogContentText>
                 <OutlinedInput
                     autoFocus
@@ -36,15 +35,15 @@ function ForgotPassword({ open, handleClose }) {
                     id="email"
                     name="email"
                     label="Email address"
-                    placeholder="Email address"
+                    placeholder="your@email.com"
                     type="email"
                     fullWidth
                 />
             </DialogContent>
             <DialogActions sx={{ pb: 3, px: 3 }}>
-                <Button onClick={handleClose}>Cancel</Button>
+                <Button onClick={handleClose}>Hủy</Button>
                 <Button variant="contained" type="submit">
-                    Continue
+                    Đặt lại mật khẩu
                 </Button>
             </DialogActions>
         </Dialog>

@@ -3,11 +3,13 @@ package com.hine.chat_be.service.impl;
 import com.hine.chat_be.entity.User;
 import com.hine.chat_be.jwt.JwtUtil;
 import com.hine.chat_be.payload.LoginRequest;
+import com.hine.chat_be.payload.LoginResponse;
 import com.hine.chat_be.payload.RegisterRequest;
 import com.hine.chat_be.payload.UserInfo;
 import com.hine.chat_be.repository.UserRepository;
 import com.hine.chat_be.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -29,7 +31,7 @@ public class UserServiceImpl implements UserService {
     public ResponseEntity<?> register(RegisterRequest registerRequest) {
         // check if user already exists
         if (userRepository.existsByEmail(registerRequest.getEmail())) {
-            return ResponseEntity.badRequest().body("User already exists");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Email đã được sử dụng");
         }
 
         // create new user
@@ -40,25 +42,29 @@ public class UserServiceImpl implements UserService {
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
 
         userRepository.save(user);
-        return ResponseEntity.ok("User registered successfully");
+        return ResponseEntity.ok("Đăng ký thành công");
     }
 
     @Override
     public ResponseEntity<?> login(LoginRequest loginRequest) {
         // check if user exists
         if (!userRepository.existsByEmail(loginRequest.getEmail())) {
-            return ResponseEntity.badRequest().body("User does not exist");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Email chưa đăng ký tài khoản");
         }
 
         User user = userRepository.findByEmail(loginRequest.getEmail());
         if(user != null && passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
             String jwt = jwtUtil.generateToken(user.getEmail());
+            LoginResponse loginResponse = new LoginResponse();
+            loginResponse.setToken(jwt);
+            loginResponse.setEmail(user.getEmail());
+            loginResponse.setFirstName(user.getFirstName());
+            loginResponse.setLastName(user.getLastName());
 
-            return ResponseEntity.ok("Bearer " + jwt);
+            return ResponseEntity.ok(loginResponse);
         } else {
-            return ResponseEntity.badRequest().body("Invalid credentials");
+            return ResponseEntity.badRequest().body("Sai mật khẩu");
         }
-
     }
 
     @Override

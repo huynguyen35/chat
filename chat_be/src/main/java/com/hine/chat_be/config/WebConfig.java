@@ -17,10 +17,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 @EnableWebSecurity
-public class WebConfig {
+public class WebConfig implements WebMvcConfigurer {
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -40,7 +42,6 @@ public class WebConfig {
     }
 
 
-    // Cấu hình Spring Security
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -49,7 +50,7 @@ public class WebConfig {
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/public/**", "/api/auth/**").permitAll()
-                        .requestMatchers("/ws/**").permitAll()  // Cho phép truy cập WebSocket
+                        .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/app/**", "/topic/**").permitAll()
                         .anyRequest().authenticated()
                 )
@@ -65,4 +66,12 @@ public class WebConfig {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/**")
+                .allowedOrigins("http://localhost:3000")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(true);
+    }
 }

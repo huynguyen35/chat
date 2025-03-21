@@ -12,7 +12,8 @@ const Provider = ({ children }) => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+        // const userInfo = JSON.parse(localStorage.getItem("userInfo"));
+        const userInfo ={}
         setUser(userInfo);
 
         if (!userInfo && location.pathname !== "/signup") navigate("/login");
