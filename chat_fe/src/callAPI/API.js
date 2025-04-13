@@ -30,3 +30,16 @@ export const login = async (data) => {
         throw error.response || "Đang có lỗi xảy ra, vui lòng thử lại sau";
     }
 };
+
+export const fetchConversation = async (userId, token) => {
+    try {
+        const response = await axios.get(API_URL + `conversation/user/${userId}`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+        return response.data;
+    } catch (error) {
+        throw error.response || "Đang có lỗi xảy ra, vui lòng thử lại sau";
+    }
+}

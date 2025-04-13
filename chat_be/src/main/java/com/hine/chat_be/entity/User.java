@@ -1,7 +1,6 @@
 package com.hine.chat_be.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -19,6 +18,15 @@ public class User implements UserDetails {
     private String lastName;
     private String email;
     private String password;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Friend> friends;
+
+    @OneToMany(mappedBy = "friend", cascade = CascadeType.ALL)
+    private List<Friend> friendRequests;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<ConversationMember> conversationMembers;
 
     public User() {
     }

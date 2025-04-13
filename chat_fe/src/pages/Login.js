@@ -71,8 +71,11 @@ export default function Login(props) {
     const [passwordError, setPasswordError] = React.useState(false);
     const [passwordErrorMessage, setPasswordErrorMessage] = React.useState('');
     const [open, setOpen] = React.useState(false);
-    const {setUser} = ChatState();
     const navigate = useNavigate();
+
+    const chatState = ChatState();
+    console.log(chatState); // Kiểm tra xem nó có giá trị không
+    const { setUser } = chatState || {};
 
     // const {user} = ChatState();
 
@@ -114,6 +117,7 @@ export default function Login(props) {
                 isClosable: true,
                 position: "bottom",
             });
+            console.log(response);
             setUser(response);
             localStorage.setItem("userInfo", JSON.stringify(response));
             navigate("/");

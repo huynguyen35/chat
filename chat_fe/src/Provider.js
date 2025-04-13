@@ -12,8 +12,7 @@ const Provider = ({ children }) => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        // const userInfo = JSON.parse(localStorage.getItem("userInfo"));
-        const userInfo ={}
+        const userInfo = JSON.parse(localStorage.getItem("userInfo"));
         setUser(userInfo);
 
         if (!userInfo && location.pathname !== "/signup") navigate("/login");
@@ -39,7 +38,11 @@ const Provider = ({ children }) => {
 };
 
 export const ChatState = () => {
-    return useContext(ChatContext);
+    const context = useContext(ChatContext);
+    if (!context) {
+        throw new Error("ChatState must be used within a ChatProvider");
+    }
+    return context;
 };
 
 export default Provider;

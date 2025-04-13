@@ -1,5 +1,7 @@
 package com.hine.chat_be.payload;
 
+import com.hine.chat_be.entity.User;
+
 public class UserInfo {
     private Integer id;
     private String firstName;
@@ -14,6 +16,10 @@ public class UserInfo {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
+    }
+
+    public UserInfo toUserDTO(User user) {
+        return new UserInfo(user.getId(), user.getFirstName(), user.getLastName(), user.getEmail());
     }
 
     public Integer getId() {

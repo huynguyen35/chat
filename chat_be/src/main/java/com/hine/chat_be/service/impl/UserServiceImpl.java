@@ -56,6 +56,7 @@ public class UserServiceImpl implements UserService {
         if(user != null && passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
             String jwt = jwtUtil.generateToken(user.getEmail());
             LoginResponse loginResponse = new LoginResponse();
+            loginResponse.setId(user.getId());
             loginResponse.setToken(jwt);
             loginResponse.setEmail(user.getEmail());
             loginResponse.setFirstName(user.getFirstName());

@@ -1,16 +1,26 @@
 // show user
 
-import React, { useEffect } from "react";
+import React, {useEffect, useState} from "react";
+import {ChatState} from "../Provider";
+import SideDrawer from "../components/SideDrawer";
+import {Box} from "@chakra-ui/layout";
+import MyChats from "../components/MyChats";
+import Chatbox from "../components/Chatbox";
 
 
 
 const Home = () => {
-    useEffect(() => {
-        document.title = "Home";
-    }, []);
+    const [fetchAgain, setFetchAgain] = useState(false);
+    const { user } = ChatState();
     return (
-        <div>
-            <h1>Home</h1>
+        <div style={{ width: "100%" }}>
+            {user && <SideDrawer />}
+            <Box display="flex" justifyContent="space-between" w="100%" h="91.5vh" p="10px">
+                {user && <MyChats fetchAgain={fetchAgain} />}
+                {user && (
+                    <Chatbox fetchAgain={fetchAgain} setFetchAgain={setFetchAgain} />
+                )}
+            </Box>
         </div>
     );
 

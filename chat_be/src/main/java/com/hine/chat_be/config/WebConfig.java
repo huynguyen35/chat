@@ -45,6 +45,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .cors().and()
                 .csrf().disable()
                 .formLogin(form -> form.disable())
                 .httpBasic(httpBasic -> httpBasic.disable())
