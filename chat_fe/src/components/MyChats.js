@@ -1,25 +1,25 @@
-import { AddIcon } from "@chakra-ui/icons";
-import { Box, Stack, Text } from "@chakra-ui/layout";
-import { useToast } from "@chakra-ui/react";
+import {AvatarFallback, AvatarImage, AvatarRoot, Box, Stack, Text} from "@chakra-ui/react";
 import axios from "axios";
-import { useEffect, useState } from "react";
-import { getSender } from "../config/ChatLogics";
+import {useEffect, useState} from "react";
+import {getSender, getSenderFull} from "../config/ChatLogics";
 import ChatLoading from "./ChatLoading";
 import GroupChatModal from ".//GroupChatModal";
-import { Button } from "@chakra-ui/react";
-import { ChatState } from "../Provider";
+import {Button} from "@chakra-ui/react";
+import {ChatState} from "../ChatProvider";
 import {fetchConversation} from "../callAPI/API";
+import {toaster} from "./ui/toaster";
 
 const MyChats = ({fetchAgain}) => {
     const [loggedUser, setLoggedUser] = useState(null);
-    const { selectedChat, setSelectedChat, user, chats, setChats } = ChatState();
-    const toast = useToast();
+    const {selectedChat, setSelectedChat, user, chats, setChats} = ChatState();
 
     const fetchChats = () => {
-        fetchConversation(user.id, user.token)
-            .then((data) => setChats(data))
+        fetchConversation(user.id)
+            .then((data) => {
+                setChats(data)
+            })
             .catch((error) => {
-                toast({
+                toaster.create({
                     title: "Error Occurred!",
                     description: "Failed to Load the chats",
                     status: "error",
@@ -29,14 +29,12 @@ const MyChats = ({fetchAgain}) => {
                 });
             });
     };
-    console.log(chats)
     useEffect(() => {
         const storedUser = JSON.parse(localStorage.getItem("userInfo"));
         setLoggedUser(storedUser);
 
         if (user) {
             fetchChats();
-            console.log(chats)
         }
     }, [fetchAgain, user]);
 
@@ -61,16 +59,8 @@ const MyChats = ({fetchAgain}) => {
                 justifyContent="space-between"
                 alignItems="center"
             >
-                My Chats
-                <GroupChatModal>
-                    <Button
-                        display="flex"
-                        fontSize={{base: "17px", md: "10px", lg: "17px"}}
-                        rightIcon={<AddIcon/>}
-                    >
-                        New Group Chat
-                    </Button>
-                </GroupChatModal>
+                Trò Chuyện
+                <GroupChatModal/>
             </Box>
             <Box
                 display="flex"
@@ -86,7 +76,10 @@ const MyChats = ({fetchAgain}) => {
                     <Stack overflowY="scroll">
                         {chats.map((chat) => (
                             <Box
-                                onClick={() => setSelectedChat(chat)}
+                                onClick={() => {
+                                    setSelectedChat(chat)
+                                    console.log(selectedChat)
+                                }}
                                 cursor="pointer"
                                 bg={selectedChat === chat ? "#38B2AC" : "#E8E8E8"}
                                 color={selectedChat === chat ? "white" : "black"}
@@ -94,20 +87,27 @@ const MyChats = ({fetchAgain}) => {
                                 py={2}
                                 borderRadius="lg"
                                 key={chat.id}
+                                display="flex"
                             >
-                                <Text>
-                                    {!chat.group
-                                        ? getSender(loggedUser, chat.conversationMembers)
-                                        : "group chat"}
-                                </Text>
-                                {/*{chat.latestMessage && (*/}
-                                {/*    <Text fontSize="xs">*/}
-                                {/*        <b>{chat.latestMessage.sender.name} : </b>*/}
-                                {/*        {chat.latestMessage.content.length > 50*/}
-                                {/*            ? chat.latestMessage.content.substring(0, 51) + "..."*/}
-                                {/*            : chat.latestMessage.content}*/}
-                                {/*    </Text>*/}
-                                {/*)}*/}
+                                <AvatarRoot colorPalette="green" size="sm" marginRight="5px">
+                                    <AvatarFallback name={getSenderFull(user, chat.members).user.firstName}/>
+                                    <AvatarImage src={getSenderFull(user, chat.members).user.avt} alt={getSenderFull(user, chat.members).user.firstName}/>
+                                </AvatarRoot>
+                                <div>
+                                    <Text fontWeight="bold">
+                                        {!chat.group
+                                            ? getSender(loggedUser, chat.members)
+                                            : "group chat"}
+                                    </Text>
+                                    {chat.lastMessage && (
+                                        <Text fontSize="xs">
+                                            <b>{chat.lastMessage.sender.firstName} : </b>
+                                            {chat.lastMessage.content.length > 25
+                                                ? chat.lastMessage.content.substring(0, 26) + "..."
+                                                : chat.lastMessage.content}
+                                        </Text>
+                                    )}
+                                </div>
                             </Box>
                         ))}
                     </Stack>

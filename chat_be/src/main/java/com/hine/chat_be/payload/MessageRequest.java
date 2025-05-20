@@ -4,13 +4,13 @@ package com.hine.chat_be.payload;
 import com.hine.chat_be.entity.enums.MessageType;
 
 public class MessageRequest {
-    private Integer conversationId;
-    private Integer senderId;
-    private Integer receiverId;
+    private Long conversationId;
+    private Long senderId;
+    private Long receiverId;
     private String content;
     private MessageType type;
 
-    public MessageRequest(Integer senderId, Integer receiverId, String content, MessageType type) {
+    public MessageRequest(Long senderId, Long receiverId, String content, MessageType type) {
         this.senderId = senderId;
         this.receiverId = receiverId;
         this.content = content;
@@ -19,26 +19,26 @@ public class MessageRequest {
 
     public MessageRequest() {
     }
-    public Integer getConversationId() {
+    public Long getConversationId() {
         return conversationId;
     }
-    public void setConversationId(Integer conversationId) {
+    public void setConversationId(Long conversationId) {
         this.conversationId = conversationId;
     }
 
-    public Integer getSenderId() {
+    public Long getSenderId() {
         return senderId;
     }
 
-    public void setSenderId(Integer senderId) {
+    public void setSenderId(Long senderId) {
         this.senderId = senderId;
     }
 
-    public Integer getReceiverId() {
+    public Long getReceiverId() {
         return receiverId;
     }
 
-    public void setReceiverId(Integer receiverId) {
+    public void setReceiverId(Long receiverId) {
         this.receiverId = receiverId;
     }
 

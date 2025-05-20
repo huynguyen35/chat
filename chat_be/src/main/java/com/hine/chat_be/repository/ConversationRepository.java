@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ConversationRepository extends JpaRepository<Conversation, Integer> {
+public interface ConversationRepository extends JpaRepository<Conversation, Long> {
 
     @Query("""
                 SELECT c FROM Conversation c
@@ -24,9 +24,9 @@ public interface ConversationRepository extends JpaRepository<Conversation, Inte
                     WHERE cm2.conversation.id = c.id AND cm2.user.id = :user2
                 )
             """)
-    Optional<Conversation> findPrivateConversation(@Param("user1") Integer user1, @Param("user2") Integer user2);
+    Optional<Conversation> findPrivateConversation(@Param("user1") Long user1, @Param("user2") Long user2);
 
     @Query("SELECT c FROM Conversation c JOIN c.conversationMembers cm WHERE cm.user.id = :userId")
-    List<Conversation> findConversationsByUserId(@Param("userId") Integer userId);
+    List<Conversation> findConversationsByUserId(@Param("userId") Long userId);
 
 }

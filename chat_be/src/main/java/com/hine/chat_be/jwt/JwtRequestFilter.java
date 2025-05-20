@@ -3,10 +3,9 @@ package com.hine.chat_be.jwt;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.hibernate.annotations.Filter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Optional;
 
 @Component
 public class JwtRequestFilter extends OncePerRequestFilter {
@@ -32,30 +32,69 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        final String authorizationHeader = request.getHeader("Authorization");
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
 
+        Optional<Cookie> jwtCookie = CookieUtils.getCookie(request, "jwt");
+        Optional<Cookie> refreshTokenCookie = CookieUtils.getCookie(request, "refreshToken");
+
+        String jwt = jwtCookie.map(Cookie::getValue).orElse(null);
+        String refreshToken = refreshTokenCookie.map(Cookie::getValue).orElse(null);
         String username = null;
-        String jwt = null;
 
-        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-            jwt = authorizationHeader.substring(7);
-            username = jwtUtil.extractUsername(jwt);
+        try {
+            if (jwt != null) {
+                username = jwtUtil.extractUsername(jwt);
+            }
+        } catch (Exception e) {
+            // Token có thể đã hết hạn
         }
 
+        // Nếu có username và chưa authenticate
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
             if (jwtUtil.validateToken(jwt, userDetails.getUsername())) {
-
-                UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
+                // Access token hợp lệ
+                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
-                usernamePasswordAuthenticationToken
-                        .setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(auth);
             }
         }
+
+        // Trường hợp jwt hết hạn nhưng có refreshToken
+        else if (refreshToken != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            try {
+                String refreshUsername = jwtUtil.extractUsername(refreshToken);
+                Long refreshUserId = jwtUtil.extractUserId(refreshToken);
+
+                if (jwtUtil.validateToken(refreshToken, refreshUsername)) {
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(refreshUsername);
+
+                    // Sinh access token mới
+                    String newJwt = jwtUtil.generateToken(refreshUsername, refreshUserId);
+
+                    // Set lại cookie jwt
+                    Cookie newAccessTokenCookie = new Cookie("jwt", newJwt);
+                    newAccessTokenCookie.setHttpOnly(true);
+                    newAccessTokenCookie.setSecure(true);
+                    newAccessTokenCookie.setPath("/");
+                    newAccessTokenCookie.setMaxAge(60 * 60); // ví dụ: 1h
+                    response.addCookie(newAccessTokenCookie);
+
+                    // Set authentication vào context
+                    UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
+                    auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                }
+            } catch (Exception e) {
+                // refresh token hết hạn hoặc lỗi
+                System.out.println("Refresh token invalid: " + e.getMessage());
+            }
+        }
+
         filterChain.doFilter(request, response);
     }
 }

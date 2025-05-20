@@ -1,12 +1,13 @@
 package com.hine.chat_be.service;
 
 import com.hine.chat_be.entity.Conversation;
+import com.hine.chat_be.payload.ConversationDTO;
 
 import java.util.List;
 
 public interface ConversationService {
 
-    Conversation createPrivateConversation(Integer user1, Integer user2);
+    Conversation createPrivateConversation(Long user1, Long user2);
 
-    List<Conversation> getConversations(Integer userId);
+    List<ConversationDTO> getConversations(Long userId);
 }

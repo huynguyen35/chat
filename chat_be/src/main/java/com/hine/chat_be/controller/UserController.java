@@ -3,10 +3,7 @@ package com.hine.chat_be.controller;
 import com.hine.chat_be.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/user")
@@ -17,7 +14,13 @@ public class UserController {
 
     // get information user
     @GetMapping("/info/{id}")
-    public ResponseEntity<?> getUserInfo(@PathVariable Integer id) {
+    public ResponseEntity<?> getUserInfo(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getUserInfo(id));
+    }
+
+    // update image user
+    @PutMapping("/update-image/{id}")
+    public ResponseEntity<?> updateUserImage(@PathVariable Long id, @RequestParam String avt) {
+        return ResponseEntity.ok(userService.updateUserImage(id, avt));
     }
 }

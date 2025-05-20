@@ -18,9 +18,9 @@ import {GoogleIcon, FacebookIcon, SitemarkIcon} from './CustomIcon';
 import AppTheme from '../AppTheme';
 import ColorModeSelect from '../ColorModeSelect';
 import {useNavigate} from "react-router-dom";
-import {ChatState} from "../Provider";
-import {useToast} from "@chakra-ui/react";
+import {ChatState} from "../ChatProvider";
 import {login} from "../callAPI/API";
+import {toaster} from "../components/ui/toaster";
 
 
 const Card = styled(MuiCard)(({theme}) => ({
@@ -65,7 +65,6 @@ const SignInContainer = styled(Stack)(({theme}) => ({
 }));
 
 export default function Login(props) {
-    const toast = useToast();
     const [emailError, setEmailError] = React.useState(false);
     const [emailErrorMessage, setEmailErrorMessage] = React.useState('');
     const [passwordError, setPasswordError] = React.useState(false);
@@ -91,7 +90,7 @@ export default function Login(props) {
         event.preventDefault();
 
         if (!validateInputs()) {
-            toast({
+            toaster.create({
                 title: emailErrorMessage === '' ? passwordErrorMessage : emailErrorMessage,
                 status: "warning",
                 duration: 5000,
@@ -110,19 +109,18 @@ export default function Login(props) {
         }
         try {
             const response = await login(data);
-            toast({
+            toaster.create({
                 title: `Đăng nhập thành công!`,
                 status: "success",
                 duration: 5000,
                 isClosable: true,
                 position: "bottom",
             });
-            console.log(response);
             setUser(response);
             localStorage.setItem("userInfo", JSON.stringify(response));
             navigate("/");
         } catch (error) {
-            toast({
+            toaster.create({
                 title: error?.data,
                 status: "error",
                 duration: 5000,

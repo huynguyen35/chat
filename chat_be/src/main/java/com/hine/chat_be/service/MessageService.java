@@ -13,4 +13,8 @@ public interface MessageService {
     MessageDTO sendMessage(MessageRequest request);
 
     List<MessageDTO> getMessages(Integer conversationId);
+
+    Optional<Message> recallMessage(Long messageId);
+
+    Optional<Message> deleteMessage(Long messageId);
 }

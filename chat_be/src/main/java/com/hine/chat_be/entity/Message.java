@@ -31,14 +31,26 @@ public class Message {
     @Column(name = "sent_at", updatable = false, columnDefinition = "TIMESTAMP")
     private LocalDateTime sentAt = LocalDateTime.now();
 
+    @Column(name = "is_read", nullable = false)
+    private boolean isRead = false;
+
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted = false;
+
+    @Column(name = "is_recalled", nullable = false)
+    private boolean isRecalled = false;
+
     public Message() {
     }
 
-    public Message(Conversation conversation, User sender, String content, MessageType messageType) {
+    public Message(Conversation conversation, User sender, String content, MessageType messageType, boolean isRead, boolean isDeleted, boolean isRecalled) {
         this.conversation = conversation;
         this.sender = sender;
         this.content = content;
         this.messageType = messageType;
+        this.isRead = isRead;
+        this.isDeleted = isDeleted;
+        this.isRecalled = isRecalled;
     }
 
     public Long getId() {
@@ -87,6 +99,29 @@ public class Message {
 
     public void setSentAt(LocalDateTime sentAt) {
         this.sentAt = sentAt;
+    }
+
+    public boolean isRead() {
+        return isRead;
+    }
+    public void setRead(boolean read) {
+        isRead = read;
+    }
+
+    public boolean isDeleted() {
+        return isDeleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        isDeleted = deleted;
+    }
+
+    public boolean isRecalled() {
+        return isRecalled;
+    }
+
+    public void setRecalled(boolean recalled) {
+        isRecalled = recalled;
     }
 
     @Override

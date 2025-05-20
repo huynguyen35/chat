@@ -3,6 +3,7 @@ package com.hine.chat_be.controller;
 import com.hine.chat_be.payload.LoginRequest;
 import com.hine.chat_be.payload.RegisterRequest;
 import com.hine.chat_be.service.UserService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -29,8 +30,13 @@ public class AuthenticationController {
 
     // login user
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
-        return userService.login(loginRequest);
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest, HttpServletResponse response) {
+        return userService.login(loginRequest, response);
+    }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<?> refreshToken(@CookieValue(value = "refreshToken", required = false) String token) {
+        return userService.refreshToken(token);
     }
 
     // logout user

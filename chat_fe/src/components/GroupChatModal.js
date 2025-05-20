@@ -1,39 +1,40 @@
 import {
-    Modal,
-    ModalOverlay,
-    ModalContent,
-    ModalHeader,
-    ModalFooter,
-    ModalBody,
-    ModalCloseButton,
     Button,
     useDisclosure,
-    FormControl,
     Input,
-    useToast,
+    DialogTrigger,
+    Portal,
+    DialogHeader,
+    DialogBody,
     Box,
+    DialogCloseTrigger,
+    DialogRoot,
+    DialogBackdrop,
+    DialogPositioner, FieldRoot, FieldLabel, DialogFooter
 } from "@chakra-ui/react";
+import { MdAdd } from "react-icons/md";
 import axios from "axios";
-import { useState } from "react";
-import { ChatState } from "../Provider";
+import React, {useState} from "react";
+import {ChatState} from "../ChatProvider";
 import UserBadgeItem from "./userAvatar/UserBadgeItem";
 import UserListItem from "./userAvatar/UserListItem";
+import {toaster} from "./ui/toaster";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
 
-const GroupChatModal = ({ children }) => {
-    const { isOpen, onOpen, onClose } = useDisclosure();
+const GroupChatModal = ({children}) => {
+    const {isOpen, onOpen, onClose} = useDisclosure();
     const [groupChatName, setGroupChatName] = useState();
     const [selectedUsers, setSelectedUsers] = useState([]);
     const [search, setSearch] = useState("");
     const [searchResult, setSearchResult] = useState([]);
     const [loading, setLoading] = useState(false);
-    const toast = useToast();
-
-    const { user, chats, setChats } = ChatState();
+    const {user, chats, setChats} = ChatState();
 
     const handleGroup = (userToAdd) => {
         if (selectedUsers.includes(userToAdd)) {
-            toast({
-                title: "User already added",
+            toaster({
+                title: "User Already Added",
                 status: "warning",
                 duration: 5000,
                 isClosable: true,
@@ -58,18 +59,14 @@ const GroupChatModal = ({ children }) => {
                     Authorization: `Bearer ${user.token}`,
                 },
             };
-            const { data } = await axios.get(`/api/user?search=${search}`, config);
+            const {data} = await axios.get(`/api/user?search=${search}`, config);
             console.log(data);
             setLoading(false);
             setSearchResult(data);
         } catch (error) {
-            toast({
-                title: "Error Occured!",
-                description: "Failed to Load the Search Results",
-                status: "error",
-                duration: 5000,
-                isClosable: true,
-                position: "bottom-left",
+            toaster.create({
+                title: "Failed to Load the Search Results",
+                description: error.response.data,
             });
         }
     };
@@ -80,7 +77,7 @@ const GroupChatModal = ({ children }) => {
 
     const handleSubmit = async () => {
         if (!groupChatName || !selectedUsers) {
-            toast({
+            toaster.create({
                 title: "Please fill all the feilds",
                 status: "warning",
                 duration: 5000,
@@ -96,7 +93,7 @@ const GroupChatModal = ({ children }) => {
                     Authorization: `Bearer ${user.token}`,
                 },
             };
-            const { data } = await axios.post(
+            const {data} = await axios.post(
                 `/api/chat/group`,
                 {
                     name: groupChatName,
@@ -106,7 +103,7 @@ const GroupChatModal = ({ children }) => {
             );
             setChats([data, ...chats]);
             onClose();
-            toast({
+            toaster.create({
                 title: "New Group Chat Created!",
                 status: "success",
                 duration: 5000,
@@ -114,7 +111,7 @@ const GroupChatModal = ({ children }) => {
                 position: "bottom",
             });
         } catch (error) {
-            toast({
+            toaster.create({
                 title: "Failed to Create the Chat!",
                 description: error.response.data,
                 status: "error",
@@ -129,66 +126,84 @@ const GroupChatModal = ({ children }) => {
         <>
             <span onClick={onOpen}>{children}</span>
 
-            <Modal onClose={onClose} isOpen={isOpen} isCentered>
-                <ModalOverlay />
-                <ModalContent>
-                    <ModalHeader
-                        fontSize="35px"
-                        fontFamily="Work sans"
-                        d="flex"
-                        justifyContent="center"
+            <DialogRoot>
+                <DialogTrigger asChild>
+                    <Button
+                        variant="outline"
+                        borderRadius="100px"
+                        color="white"
+                        backgroundColor="#38B2AC"
                     >
-                        Create Group Chat
-                    </ModalHeader>
-                    <ModalCloseButton />
-                    <ModalBody d="flex" flexDir="column" alignItems="center">
-                        <FormControl>
-                            <Input
-                                placeholder="Chat Name"
-                                mb={3}
-                                onChange={(e) => setGroupChatName(e.target.value)}
-                            />
-                        </FormControl>
-                        <FormControl>
-                            <Input
-                                placeholder="Add Users eg: John, Piyush, Jane"
-                                mb={1}
-                                onChange={(e) => handleSearch(e.target.value)}
-                            />
-                        </FormControl>
-                        <Box w="100%" d="flex" flexWrap="wrap">
-                            {selectedUsers.map((u) => (
-                                <UserBadgeItem
-                                    key={u._id}
-                                    user={u}
-                                    handleFunction={() => handleDelete(u)}
-                                />
-                            ))}
-                        </Box>
-                        {loading ? (
-                            // <ChatLoading />
-                            <div>Loading...</div>
-                        ) : (
-                            searchResult
-                                ?.slice(0, 4)
-                                .map((user) => (
-                                    <UserListItem
-                                        key={user._id}
-                                        user={user}
-                                        handleFunction={() => handleGroup(user)}
+                        <MdAdd/>Tạo nhóm
+                    </Button>
+                </DialogTrigger>
+                <Portal>
+                    <DialogBackdrop/>
+                    <DialogPositioner>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Tạo Nhóm Chat</DialogTitle>
+                            </DialogHeader>
+                            <DialogBody>
+                                <FieldRoot>
+                                    <FieldLabel>Tên Nhóm</FieldLabel>
+                                    <Input
+                                        placeholder="Vd: Nhóm abc"
+                                        mb={3}
+                                        onChange={(e) => setGroupChatName(e.target.value)}
                                     />
-                                ))
-                        )}
-                    </ModalBody>
-                    <ModalFooter>
-                        <Button onClick={handleSubmit} colorScheme="blue">
-                            Create Chat
-                        </Button>
-                    </ModalFooter>
-                </ModalContent>
-            </Modal>
+                                </FieldRoot>
+                                <FieldRoot>
+                                    <FieldLabel>Thêm Người Dùng</FieldLabel>
+                                    <Input
+                                        placeholder="Vd: user1, user2, user3"
+                                        mb={1}
+                                        onChange={(e) => handleSearch(e.target.value)}
+                                    />
+                                </FieldRoot>
+                                <Box w="100%" d="flex" flexWrap="wrap">
+                                    {selectedUsers.map((u) => (
+                                        <UserBadgeItem
+                                            key={u._id}
+                                            user={u}
+                                            handleFunction={() => handleDelete(u)}
+                                        />
+                                    ))}
+                                </Box>
+                                {loading ? (
+                                    // <ChatLoading />
+                                    <div>Loading...</div>
+                                ) : (
+                                    searchResult
+                                        ?.slice(0, 4)
+                                        .map((user) => (
+                                            <UserListItem
+                                                key={user._id}
+                                                user={user}
+                                                handleFunction={() => handleGroup(user)}
+                                            />
+                                        ))
+                                )}
+                            </DialogBody>
+                            <DialogFooter>
+                                <Button
+                                    colorScheme="blue"
+                                    onClick={handleSubmit}
+                                    mr={3}
+                                >
+                                    Tạo Nhóm
+                                </Button>
+                                <DialogCloseTrigger asChild>
+                                    <Button variant="ghost">Đóng</Button>
+                                </DialogCloseTrigger>
+                            </DialogFooter>
+                        </DialogContent>
+                    </DialogPositioner>
+                </Portal>
+            </DialogRoot>
         </>
-    );
+    )
+        ;
 };
 
 export default GroupChatModal;

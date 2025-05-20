@@ -1,6 +1,7 @@
 package com.hine.chat_be.controller;
 
 import com.hine.chat_be.entity.Conversation;
+import com.hine.chat_be.payload.ConversationDTO;
 import com.hine.chat_be.service.ConversationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,8 +21,8 @@ public class ConversationController {
     private ConversationService conversationService;
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<?> getConversations(@PathVariable Integer userId) {
-        List<Conversation> conversations = conversationService.getConversations(userId);
+    public ResponseEntity<?> getConversations(@PathVariable Long userId) {
+        List<ConversationDTO> conversations = conversationService.getConversations(userId);
 
         if (conversations.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NO_CONTENT).body("Chưa có cuộc trò chuyện nào");

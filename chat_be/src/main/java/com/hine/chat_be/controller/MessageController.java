@@ -31,12 +31,28 @@ public class MessageController {
         return ResponseEntity.ok(messages);
     }
 
+    // Recall message
+    @PutMapping("/recall/{messageId}")
+    public ResponseEntity<?> recallMessage(@PathVariable Long messageId) {
+        Optional<Message> message = messageService.recallMessage(messageId);
 
+        if (message.isPresent()) {
+            return ResponseEntity.ok(message.get());
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Tin nhắn không tồn tại");
+        }
+    }
 
-    @PostMapping("/send")
-    public ResponseEntity<MessageDTO> sendMessage(@RequestBody MessageRequest request) {
-        MessageDTO savedMessage = messageService.sendMessage(request);
-        return ResponseEntity.ok(savedMessage);
+    // Delete message
+    @DeleteMapping("/delete/{messageId}")
+    public ResponseEntity<?> deleteMessage(@PathVariable Long messageId) {
+        Optional<Message> message = messageService.deleteMessage(messageId);
+
+        if (message.isPresent()) {
+            return ResponseEntity.ok(message.get());
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Tin nhắn không tồn tại");
+        }
     }
 
 

@@ -20,20 +20,17 @@ public class JwtUtil {
 
     private static final Logger logger = LoggerFactory.getLogger(JwtUtil.class);
 
-    // Tiêm (Inject) giá trị cấu hình từ application.properties hoặc application.yml
     @Value("${jwt.secret}")
-    private String jwtSecret; // Khóa bí mật đọc từ cấu hình
+    private String jwtSecret;
 
-    @Value("${jwt.expiration.ms}")
-    private long jwtExpirationMs; // Thời gian hết hạn (mili giây) đọc từ cấu hình
+    @Value("${jwt.access.expiration}")
+    private Long jwtExpirationMs;
 
-    private SecretKey cachedSigningKey; // Lưu cache đối tượng khóa
+    @Value("${jwt.refresh.expiration}")
+    private Long jwtRefreshExpirationMs;
 
-    /**
-     * Tạo khóa ký từ chuỗi bí mật Base64 đã cấu hình.
-     * Lưu cache kết quả để tăng hiệu quả.
-     * @return Đối tượng SecretKey.
-     */
+    private SecretKey cachedSigningKey;
+
     private SecretKey getSigningKey() {
         // Lưu cache đối tượng SecretKey vì việc tạo lại nó tốn kém
         if (cachedSigningKey == null) {
@@ -62,6 +59,15 @@ public class JwtUtil {
     }
 
     /**
+     * Trích xuất ID người dùng từ token JWT.
+     * @param token Token JWT.
+     * @return ID người dùng.
+     */
+    public Long extractUserId(String token) {
+        return extractClaim(token, claims -> claims.get("userId", Long.class));
+    }
+
+    /**
      * Trích xuất một claim cụ thể từ token bằng hàm phân giải claim.
      * @param token Token JWT.
      * @param claimsResolver Hàm để trích xuất claim mong muốn.
@@ -69,6 +75,7 @@ public class JwtUtil {
      * @return Claim đã trích xuất.
      * @throws JwtException nếu phân tích thất bại.
      */
+
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
@@ -114,10 +121,18 @@ public class JwtUtil {
      * @param username Subject (tên người dùng) cho token.
      * @return Chuỗi JWT đã tạo.
      */
-    public String generateToken(String username) {
+    public String generateToken(String username, Long userId) {
         Map<String, Object> claims = new HashMap<>();
-        // Thêm bất kỳ claim tiêu chuẩn nào khác ở đây nếu cần
-        return createToken(claims, username);
+        // Thêm userId vào claims
+        claims.put("userId", userId);
+        return createToken(claims, username, jwtExpirationMs);
+    }
+
+    public String generateRefreshToken(String username, Long userId) {
+        Map<String, Object> claims = new HashMap<>();
+        // Thêm userId vào claims
+        claims.put("userId", userId);
+        return createToken(claims, username, jwtRefreshExpirationMs);
     }
 
     /**
@@ -126,9 +141,9 @@ public class JwtUtil {
      * @param subject Subject (tên người dùng) của token.
      * @return Chuỗi JWT đã tạo.
      */
-    private String createToken(Map<String, Object> claims, String subject) {
+    private String createToken(Map<String, Object> claims, String subject, Long expiration) {
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpirationMs); // Sử dụng thời hạn từ cấu hình
+        Date expiryDate = new Date(now.getTime() + expiration); // Sử dụng thời hạn từ cấu hình
 
         return Jwts.builder()
                 .setClaims(claims)
@@ -167,6 +182,24 @@ public class JwtUtil {
         } catch (IllegalArgumentException e) {
             logger.error("Chuỗi claims JWT trống: {}", e.getMessage());
         } catch (JwtException e) { // Bắt JwtException rộng hơn cho các vấn đề tiềm ẩn khác
+            logger.error("Lỗi xác thực JWT: {}", e.getMessage());
+        }
+        return false; // Trả về false nếu có bất kỳ ngoại lệ nào xảy ra
+    }
+
+
+    /**
+     * Kiểm tra xem token có hợp lệ hay không.
+     * @param token Token JWT.
+     * @return true nếu token hợp lệ, false nếu ngược lại.
+     */
+    public Boolean validateToken(String token) {
+        try {
+            // Phân tích claims. Việc này xác minh chữ ký và hạn sử dụng.
+            Claims claims = extractAllClaims(token);
+            // Kiểm tra xem token chưa hết hạn
+            return !claims.getExpiration().before(new Date());
+        } catch (JwtException e) {
             logger.error("Lỗi xác thực JWT: {}", e.getMessage());
         }
         return false; // Trả về false nếu có bất kỳ ngoại lệ nào xảy ra

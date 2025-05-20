@@ -7,26 +7,32 @@ import java.util.List;
 
 public class MessageDTO {
     private Long id;
-    private Conversation conversation;
+    private Long conversationId;
     private UserInfo sender;
     private String content;
     private String type;
     private String sentAt;
+    private boolean isRead;
+    private boolean isDeleted;
+    private boolean isRecalled;
 
-    public MessageDTO(Long id, Conversation conversation, UserInfo sender, String content, String type, String sentAt) {
+    public MessageDTO(Long id, Long conversationId, UserInfo sender, String content, String type, String sentAt, boolean isRead, boolean isDeleted, boolean isRecalled) {
         this.id = id;
-        this.conversation = conversation;
+        this.conversationId = conversationId;
         this.sender = sender;
         this.content = content;
         this.type = type;
         this.sentAt = sentAt;
+        this.isRead = isRead;
+        this.isDeleted = isDeleted;
+        this.isRecalled = isRecalled;
     }
 
     public MessageDTO() {
     }
 
     public MessageDTO toDTO(Message message) {
-        return new MessageDTO(message.getId().longValue(), message.getConversation(), new UserInfo().toUserDTO(message.getSender()), message.getContent(), message.getMessageType().toString(), message.getSentAt().toString());
+        return new MessageDTO(message.getId(), message.getConversation().getId(), new UserInfo().toUserDTO(message.getSender()), message.getContent(), message.getMessageType().toString(), message.getSentAt().toString(), message.isRead(), message.isDeleted(), message.isRecalled());
     }
 
     public Long getId() {
@@ -37,13 +43,13 @@ public class MessageDTO {
         this.id = id;
     }
 
-    public Conversation getConversation() {
-        return conversation;
+    public Long getConversation() {
+        return conversationId;
     }
 
 
-    public void setConversation(Conversation conversation) {
-        this.conversation = conversation;
+    public void setConversation(Long conversationId) {
+        this.conversationId = conversationId;
     }
 
     public UserInfo getSender() {
@@ -78,6 +84,25 @@ public class MessageDTO {
 
     public void setSentAt(String sentAt) {
         this.sentAt = sentAt;
+    }
+
+    public boolean isRead() {
+        return isRead;
+    }
+    public void setRead(boolean read) {
+        isRead = read;
+    }
+    public boolean isDeleted() {
+        return isDeleted;
+    }
+    public void setDeleted(boolean deleted) {
+        isDeleted = deleted;
+    }
+    public boolean isRecalled() {
+        return isRecalled;
+    }
+    public void setRecalled(boolean recalled) {
+        isRecalled = recalled;
     }
 
 

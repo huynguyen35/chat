@@ -1,5 +1,5 @@
-import { CloseIcon } from "@chakra-ui/icons";
-import { Badge } from "@chakra-ui/layout";
+import { MdClose } from "react-icons/md";
+import { Badge } from "@chakra-ui/react";
 
 const UserBadgeItem = ({ user, handleFunction, admin }) => {
   return (
@@ -17,7 +17,7 @@ const UserBadgeItem = ({ user, handleFunction, admin }) => {
     >
       {user.firstName}
       {admin === user._id && <span> (Admin)</span>}
-      <CloseIcon pl={1} />
+      <MdClose pl={1} />
     </Badge>
   );
 };

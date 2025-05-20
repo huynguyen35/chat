@@ -13,11 +13,12 @@ public class User implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
     private String firstName;
     private String lastName;
     private String email;
     private String password;
+    private String avt;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Friend> friends;
@@ -31,19 +32,20 @@ public class User implements UserDetails {
     public User() {
     }
 
-    public User(Integer id, String firstName, String lastName, String email, String password) {
+    public User(Long id, String firstName, String lastName, String email, String password, String avt) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
         this.password = password;
+        this.avt = avt;
     }
 
-    public Integer getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -87,6 +89,14 @@ public class User implements UserDetails {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getAvt() {
+        return avt;
+    }
+
+    public void setAvt(String avt) {
+        this.avt = avt;
     }
 
     @Override

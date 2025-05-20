@@ -12,7 +12,7 @@ public class Conversation {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
     private String name;
     private boolean isGroup;
     @Column(columnDefinition = "TIMESTAMP", updatable = false)
@@ -23,20 +23,24 @@ public class Conversation {
     @JsonManagedReference
     private List<ConversationMember> conversationMembers;
 
+    @OneToOne
+    @JoinColumn(name = "last_message_id")
+    private Message lastMessage;
+
     public Conversation() {
     }
 
-    public Conversation(Integer id, String name, boolean isGroup) {
+    public Conversation(Long id, String name, boolean isGroup) {
         this.id = id;
         this.name = name;
         this.isGroup = isGroup;
     }
 
-    public Integer getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -72,6 +76,12 @@ public class Conversation {
         this.conversationMembers = conversationMembers;
     }
 
+    public Message getLastMessage() {
+        return lastMessage;
+    }
+    public void setLastMessage(Message lastMessage) {
+        this.lastMessage = lastMessage;
+    }
 
 
     @Override

@@ -1,9 +1,9 @@
 // show user
 
 import React, {useEffect, useState} from "react";
-import {ChatState} from "../Provider";
+import {ChatState} from "../ChatProvider";
 import SideDrawer from "../components/SideDrawer";
-import {Box} from "@chakra-ui/layout";
+import {Box} from "@chakra-ui/react";
 import MyChats from "../components/MyChats";
 import Chatbox from "../components/Chatbox";
 

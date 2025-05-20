@@ -3,30 +3,32 @@ package com.hine.chat_be.payload;
 import com.hine.chat_be.entity.User;
 
 public class UserInfo {
-    private Integer id;
+    private Long id;
     private String firstName;
     private String lastName;
     private String email;
+    private String avt;
 
     public UserInfo() {
     }
 
-    public UserInfo(Integer id, String firstName, String lastName, String email) {
+    public UserInfo(Long id, String firstName, String lastName, String email, String avt) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
+        this.avt = avt;
     }
 
     public UserInfo toUserDTO(User user) {
-        return new UserInfo(user.getId(), user.getFirstName(), user.getLastName(), user.getEmail());
+        return new UserInfo(user.getId(), user.getFirstName(), user.getLastName(), user.getEmail(), user.getAvt());
     }
 
-    public Integer getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -52,5 +54,13 @@ public class UserInfo {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getAvt() {
+        return avt;
+    }
+
+    public void setAvt(String avt) {
+        this.avt = avt;
     }
 }

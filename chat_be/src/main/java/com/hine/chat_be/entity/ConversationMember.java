@@ -13,7 +13,7 @@ public class ConversationMember {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @ManyToOne
     @JoinColumn(name = "conversation_id", referencedColumnName = "id", nullable = false)
@@ -39,11 +39,11 @@ public class ConversationMember {
         this.role = role;
     }
 
-    public Integer getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
