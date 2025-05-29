@@ -1,13 +1,17 @@
 package com.hine.chat_be.controller;
 
+import com.hine.chat_be.entity.Message;
 import com.hine.chat_be.payload.MessageDTO;
 import com.hine.chat_be.payload.MessageRequest;
+import com.hine.chat_be.payload.RecallRequest;
 import com.hine.chat_be.service.MessageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
+
+import java.util.Optional;
 
 @Controller
 public class ChatController {
@@ -18,10 +22,27 @@ public class ChatController {
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
+    // Send message to the client
     @MessageMapping("/chat.send")
     public void sendMessage(@Payload MessageRequest request) {
         MessageDTO savedMessage = messageService.sendMessage(request);
         // Send the message to the appropriate topic
         messagingTemplate.convertAndSend("/topic/conversation/" + request.getConversationId(), savedMessage);
+    }
+
+    // Recall the message
+    @MessageMapping("/chat.recall")
+    public void recallMessage(@Payload RecallRequest request) {
+        Optional<Message> recalledMessage = messageService.recallMessage(request.getMessageId());
+        // Send the recalled message to the appropriate topic
+        messagingTemplate.convertAndSend("/topic/conversation/" + request.getConversationId(), recalledMessage);
+    }
+
+    // Delete the message
+    @MessageMapping("/chat.delete")
+    public void deleteMessage(@Payload RecallRequest request) {
+        Optional<Message> deletedMessage = messageService.deleteMessage(request.getMessageId());
+        // Send the deleted message to the appropriate topic
+        messagingTemplate.convertAndSend("/topic/conversation/" + request.getConversationId(), deletedMessage);
     }
 }

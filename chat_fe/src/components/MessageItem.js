@@ -21,7 +21,6 @@ const MessageItem = ({ message, prevMessages, index }) => {
     const m = message; // Để cho dễ đọc hơn, giữ nguyên 'm' từ code gốc
     const messages = prevMessages; // Đổi tên để tránh nhầm lẫn
     const isSentByUser = m.sender.id === user.id; // Kiểm tra xem tin nhắn có phải của người dùng hiện tại không
-
     return (
         <div
             key={m.id}
@@ -79,10 +78,10 @@ const MessageItem = ({ message, prevMessages, index }) => {
                     <Tooltip showArrow content={`${m.sender.firstName} ${m.sender.lastName || ""}`}
                              positioning={{placement: "right-end"}}>
                         <AvatarRoot
-                            size="sm"
+                            size="xs"
                             colorPalette={"green"}
                             cursor="pointer"
-                            marginTop="10px"
+                            marginTop={isSameUser(messages, m, index) ? "4px" : "10px"}
                             marginRight={1}
                         >
                             <AvatarFallback name={`${m.sender.firstName} ${m.sender.lastName || ""}`}/>

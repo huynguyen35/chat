@@ -1,10 +1,13 @@
+// SingleChat.js
 import {AvatarFallback, AvatarImage, AvatarRoot, Box, Text, useDisclosure} from "@chakra-ui/react";
 import {Button, Flex, IconButton, Spinner, Textarea} from "@chakra-ui/react";
 import {MdArrowBackIos} from "react-icons/md";
-import {useEffect, useRef, useState} from "react";
+// Thêm useCallback vào import từ React
+import {useEffect, useRef, useState, useCallback} from "react";
 import axios from "axios";
-import SockJS from "sockjs-client";
-import {CompatClient, Stomp} from "@stomp/stompjs";
+// SockJS, Stomp, CompatClient không cần thiết ở đây nếu useSocket đã xử lý
+// import SockJS from "sockjs-client";
+// import {CompatClient, Stomp} from "@stomp/stompjs";
 import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
 import {GrPhone, GrVideo, GrView} from "react-icons/gr";
@@ -16,9 +19,9 @@ import UpdateGroupChatModal from "./UpdateGroupChatModal";
 import {getSender, getSenderFull} from "../config/ChatLogics";
 import "./styles.css";
 import {toaster} from "./ui/toaster";
-import {fetchChats} from "../callAPI/API";
+import {fetchChats} from "../callAPI/API"; // Đảm bảo API này đúng
+import useSocket from "../hooks/useSocket";
 
-const SOCKET_URL = "http://localhost:8080/ws";
 
 const SingleChat = ({fetchAgain, setFetchAgain}) => {
     const {selectedChat, setSelectedChat, user} = ChatState();
@@ -26,71 +29,38 @@ const SingleChat = ({fetchAgain, setFetchAgain}) => {
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(false);
     const [newMessage, setNewMessage] = useState("");
-    const [socketConnected, setSocketConnected] = useState(false);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
     const {open, onOpen, onClose} = useDisclosure();
 
-    const stompClientRef = useRef(null);
-    const subscriptionRef = useRef(null);
+    // Sử dụng useCallback cho onMessage
+    const handleNewMessage = useCallback((message) => {
+        // Kiểm tra xem tin nhắn có phải cho cuộc trò chuyện hiện tại không
+        // (Điều này quan trọng nếu server gửi tin nhắn mà không lọc theo conversationId cụ thể trên client,
+        // hoặc nếu bạn có nhiều subscription từ các instance useSocket khác nhau)
+        // Tuy nhiên, useSocket của bạn đã subscribe theo conversationId, nên bước này có thể không quá cần thiết
+        // nhưng là một lớp bảo vệ tốt.
+        // Ví dụ: if (message.conversationId === selectedChat?.id) {
+        setMessages((prevMessages) => {
+            // Tránh thêm tin nhắn trùng lặp nếu đã có
+            if (prevMessages.find(m => m.id === message.id)) { // Giả sử tin nhắn có 'id' duy nhất
+                return prevMessages;
+            }
+            return [...prevMessages, message];
+        });
+        // }
+    }, [setMessages]); // selectedChat?.id có thể thêm vào dependency nếu bạn có kiểm tra conversationId bên trong
+
+    const {sendMessage} = useSocket({
+        userId: user.id,
+        conversationId: selectedChat?.id,
+        onMessage: handleNewMessage, // Truyền hàm đã được bọc bởi useCallback
+        // onNotification: handleNewNotification, // Nếu có, cũng nên dùng useCallback
+    });
 
 
     const addEmoji = (e) => {
         setNewMessage(prev => prev + e.native);
-    };
-
-    const connectWebSocket = () => {
-        const socket = new SockJS(SOCKET_URL);
-        const stompClient = Stomp.over(socket);
-
-        stompClient.connect(
-            {Authorization: `Bearer ${user.token}`},
-            () => {
-                setSocketConnected(true);
-                stompClientRef.current = stompClient;
-
-                if (selectedChat?.id) {
-                    subscribeToChat(selectedChat.id);
-                }
-            },
-            (error) => {
-                console.error("WebSocket error:", error);
-                setSocketConnected(false);
-            }
-        );
-    };
-
-    const subscribeToChat = (chatId) => {
-        if (!stompClientRef.current) return;
-
-        subscriptionRef.current = stompClientRef.current.subscribe(
-            `/topic/conversation/${chatId}`,
-            (messageOutput) => {
-                const msg = JSON.parse(messageOutput.body);
-                setMessages((prev) => {
-                    const exists = prev.some((m) => m.id === msg.id); // tránh thêm trùng
-                    if (!exists) return [...prev, msg];
-                    return prev;
-                });
-
-            }
-        );
-    };
-
-    const unsubscribeFromChat = () => {
-        if (subscriptionRef.current) {
-            subscriptionRef.current.unsubscribe();
-            subscriptionRef.current = null;
-        }
-    };
-
-    const disconnectWebSocket = () => {
-        if (stompClientRef.current) {
-            stompClientRef.current.disconnect(() => {
-                setSocketConnected(false);
-                stompClientRef.current = null;
-            });
-        }
     };
 
     const fetchMessages = async () => {
@@ -109,62 +79,41 @@ const SingleChat = ({fetchAgain, setFetchAgain}) => {
                 isClosable: true,
                 position: "bottom",
             });
+            setLoading(false); // Đảm bảo loading được set false khi có lỗi
         }
     };
 
-    const sendMessage = () => {
-        if (
-            newMessage.trim() &&
-            stompClientRef.current &&
-            stompClientRef.current.connected // kiểm tra kết nối của STOMP client
-        ) {
-            const msgRequest = {
-                content: newMessage,
-                conversationId: selectedChat.id,
-                senderId: user.id,
-                receiverId: selectedChat.members.find(
-                    (u) => u.user.id !== user.id
-                )?.user.id,
-                type: "TEXT",
-            };
+    const handleSend = () => {
+        const content = newMessage.trim();
+        if (!content || !selectedChat) return; // Thêm kiểm tra selectedChat
 
-            stompClientRef.current.send(
-                "/app/chat.send",
-                {},
-                JSON.stringify(msgRequest)
-            );
-
-            setNewMessage("");
-        } else {
-            console.warn("WebSocket chưa kết nối, không thể gửi tin nhắn");
-        }
-    };
-
-
-
-    useEffect(() => {
-        connectWebSocket();
-
-        return () => {
-            unsubscribeFromChat();
-            disconnectWebSocket();
+        const msgRequest = {
+            content: content, // Sửa lại: content thay vì newMessage để lấy giá trị đã trim
+            conversationId: selectedChat.id,
+            senderId: user.id,
+            // receiverId có thể không cần thiết nếu server xử lý qua conversationId topic
+            receiverId: !selectedChat.group ? selectedChat.members.find(
+                (u) => u.user.id !== user.id
+            )?.user.id : undefined, // Hoặc null
+            type: "TEXT",
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+
+        console.log("Sending message:", msgRequest);
+        sendMessage("/app/chat.send", msgRequest);
+        setNewMessage("");
+    };
 
     useEffect(() => {
-        if (selectedChat?.id && stompClientRef.current && socketConnected) {
-            unsubscribeFromChat(); // hủy đăng ký cũ nếu có
-            subscribeToChat(selectedChat.id); // đăng ký mới
+        if (selectedChat) { // Chỉ fetch khi có selectedChat
             fetchMessages();
+        } else {
+            setMessages([]); // Xóa tin nhắn khi không có chat nào được chọn
         }
+    }, [selectedChat]); // Không cần fetchMessages làm dependency vì nó không thay đổi
 
-        return () => {
-            unsubscribeFromChat(); // hủy khi rời chat
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedChat]);
+    // console.log("Current messages in SingleChat:", messages); // Log để debug
 
+    // ... JSX của bạn không đổi
     return (
         <>
             {selectedChat ? (
@@ -206,8 +155,10 @@ const SingleChat = ({fetchAgain, setFetchAgain}) => {
 
                                     <Button variant="ghost" size="sm" onClick={onOpen}>
                                         <AvatarRoot colorPalette="green" size="sm">
-                                            <AvatarFallback name={getSenderFull(user, selectedChat.members).user.firstName}/>
-                                            <AvatarImage src={getSenderFull(user, selectedChat.members).user.avt} alt={getSenderFull(user, selectedChat.members).user.firstName}/>
+                                            <AvatarFallback
+                                                name={getSenderFull(user, selectedChat.members).user.firstName}/>
+                                            <AvatarImage src={getSenderFull(user, selectedChat.members).user.avt}
+                                                         alt={getSenderFull(user, selectedChat.members).user.firstName}/>
                                         </AvatarRoot>
                                     </Button>
 
@@ -262,7 +213,7 @@ const SingleChat = ({fetchAgain, setFetchAgain}) => {
                                 onKeyDown={(e) => {
                                     if (e.key === "Enter" && !e.shiftKey) {
                                         e.preventDefault();
-                                        sendMessage();
+                                        handleSend();
                                     }
                                 }}
                                 placeholder="Nhập tin nhắn..."
@@ -283,6 +234,7 @@ const SingleChat = ({fetchAgain, setFetchAgain}) => {
                             <IconButton
                                 backgroundColor="#38B2AC"
                                 ml={2}
+                                // onClick={handleSendImage} // Cần hàm xử lý gửi ảnh
                             >
                                 <BsImage/>
                             </IconButton>
@@ -290,7 +242,7 @@ const SingleChat = ({fetchAgain, setFetchAgain}) => {
                             <IconButton
                                 ml={2}
                                 backgroundColor="deepskyblue"
-                                onClick={sendMessage}
+                                onClick={handleSend}
                                 isDisabled={!newMessage.trim()}
                             >
                                 <BsSend/>
@@ -302,7 +254,6 @@ const SingleChat = ({fetchAgain, setFetchAgain}) => {
                                 </Box>
                             )}
                         </Flex>
-
                     </Box>
                 </>
             ) : (

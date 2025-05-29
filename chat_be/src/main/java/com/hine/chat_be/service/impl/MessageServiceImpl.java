@@ -84,8 +84,6 @@ public class MessageServiceImpl implements MessageService {
 
         MessageDTO messageDTO = new MessageDTO().toDTO(message);
 
-        messagingTemplate.convertAndSend("/topic/conversation/" + conversation.getId(), messageDTO);
-
         // Send notification to the receiver
         notificationService.senNotificationToUser(receiver.getId(), notificationDTO);
 

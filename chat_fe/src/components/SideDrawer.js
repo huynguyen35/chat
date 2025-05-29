@@ -17,7 +17,7 @@ import {Box, Text} from "@chakra-ui/react";
 import {FaChevronDown, FaBell,} from "react-icons/fa6";
 import {FaSearch} from "react-icons/fa";
 import {useNavigate} from "react-router-dom";
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import axios from "axios";
 import ChatLoading from "./ChatLoading";
 import {Spinner} from "@chakra-ui/react";
@@ -32,6 +32,7 @@ import {Client} from "@stomp/stompjs";
 import {toaster} from "./ui/toaster";
 import Badge from '@mui/material/Badge';
 import {styled} from "@mui/material/styles";
+import useSocket from "../hooks/useSocket";
 
 
 function SideDrawer() {
@@ -55,36 +56,29 @@ function SideDrawer() {
 
     const navigate = useNavigate();
 
-    useEffect(() => {
-        if (!user) return;
-
-        // Khởi tạo WebSocket
-        const stompClient = new Client({
-            webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
-            reconnectDelay: 5000,
-            onConnect: () => {
-                console.log("✅ Connected to WebSocket");
-
-                stompClient.subscribe("/user/queue/notification", (message) => {
-                    const notificationData = JSON.parse(message.body);
-                    console.log("📨 Notification received", notificationData);
-
-                    // Thêm vào danh sách notification
-                    setNotification((prev) => [notificationData, ...prev]);
-                });
-            },
-            onStompError: (frame) => {
-                console.error("STOMP error:", frame.headers["message"]);
-            },
+    const handleNewNotification = useCallback((newNoti) => {
+        console.log("this is called");
+        // Giả sử newNoti là một object có cấu trúc phù hợp với những gì bạn render
+        // Ví dụ: { id: 'some-unique-id', content: 'New message from X', chat: { ... }, createdAt: 'timestamp' }
+        setNotification((prevNotifications) => [newNoti, ...prevNotifications]);
+        console.log("newNoti", newNoti);
+        // Tùy chọn: Hiển thị toaster cho thông báo mới
+        toaster.create({
+            title: "Thông báo mới",
+            description: newNoti.content || "Bạn có thông báo mới.", // Đảm bảo newNoti.content tồn tại
+            status: "info",
+            duration: 5000,
+            isClosable: true,
+            position: "top-right", // Hoặc vị trí bạn muốn
         });
+    }, [setNotification]);
 
-        stompClient.activate();
-
-        return () => {
-            stompClient.deactivate();
-        };
-    }, [user]);
-
+    useSocket({
+        userId: user.id,
+        conversationId: null,
+        onMessage: null,
+        onNotification: handleNewNotification, // Nếu có, cũng nên dùng useCallback
+    })
 
 
     const logoutHandler = () => {
