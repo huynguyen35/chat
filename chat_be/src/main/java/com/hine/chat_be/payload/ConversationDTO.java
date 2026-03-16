@@ -59,7 +59,21 @@ public class ConversationDTO {
         this.members = members;
     }
     public ConversationDTO toDTO(Conversation conversation) {
-        return new ConversationDTO(conversation.getId(), conversation.getName(), conversation.isGroup(), conversation.getCreated_at().toString(), new MessageDTO().toDTO(conversation.getLastMessage()), new ConversationMemberDTO().toDTOList(conversation.getConversationMembers()));
+        MessageDTO lastMessageDTO = conversation.getLastMessage() == null
+                ? null
+                : new MessageDTO().toDTO(conversation.getLastMessage());
+        List<ConversationMemberDTO> memberDTOs = conversation.getConversationMembers() == null
+                ? List.of()
+                : new ConversationMemberDTO().toDTOList(conversation.getConversationMembers());
+
+        return new ConversationDTO(
+                conversation.getId(),
+                conversation.getName(),
+                conversation.isGroup(),
+                conversation.getCreated_at().toString(),
+                lastMessageDTO,
+                memberDTOs
+        );
     }
 
 }

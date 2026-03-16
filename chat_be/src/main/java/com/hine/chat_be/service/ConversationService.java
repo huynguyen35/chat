@@ -9,5 +9,7 @@ public interface ConversationService {
 
     Conversation createPrivateConversation(Long user1, Long user2);
 
+    ConversationDTO getOrCreatePrivateConversation(Long user1, Long user2);
+
     List<ConversationDTO> getConversations(Long userId);
 }

@@ -14,13 +14,71 @@ import {
 import {CiMenuKebab} from "react-icons/ci";
 import {ChatState} from "../ChatProvider";
 
-const MessageItem = ({ message, prevMessages, index }) => {
+const MessageItem = ({ message, prevMessages, index, onRecall, onForward }) => {
     const {user} = ChatState();
     const [isHover, setIsHover] = useState(false); // <-- useState được gọi ở cấp cao nhất của MessageItem
 
     const m = message; // Để cho dễ đọc hơn, giữ nguyên 'm' từ code gốc
     const messages = prevMessages; // Đổi tên để tránh nhầm lẫn
     const isSentByUser = m.sender.id === user.id; // Kiểm tra xem tin nhắn có phải của người dùng hiện tại không
+    const isRecalled = Boolean(m.isRecalled);
+    const isDeleted = Boolean(m.isDeleted);
+    const isActionDisabled = isRecalled || isDeleted;
+    const canRecall = isSentByUser && !isActionDisabled;
+
+    const handleRecall = () => {
+        if (!canRecall) return;
+        onRecall?.(m);
+    };
+
+    const handleForward = () => {
+        if (isActionDisabled) return;
+        onForward?.(m);
+    };
+
+    const displayContent = isRecalled
+        ? "Tin nhắn đã bị thu hồi"
+        : isDeleted
+            ? "Tin nhắn đã bị xóa"
+            : m.content;
+
+    const renderMenu = () => (
+        <MenuRoot>
+            <MenuTrigger asChild>
+                <IconButton
+                    size="2xs"
+                    color="gray"
+                    variant="ghost"
+                    backgroundColor="transparent"
+                    marginTop="10px"
+                    padding="5px"
+                >
+                    <CiMenuKebab/>
+                </IconButton>
+            </MenuTrigger>
+            <Portal>
+                <MenuPositioner>
+                    <MenuArrow/>
+                    <MenuContent>
+                        <MenuItem value="chuyentiep" onClick={handleForward} isDisabled={isActionDisabled}>
+                            Chuyển tiếp
+                        </MenuItem>
+                        {isSentByUser && (
+                            <MenuItem
+                                value="recall"
+                                color="fg.error"
+                                _hover={{bg: "bg.error", color: "fg.error"}}
+                                onClick={handleRecall}
+                                isDisabled={!canRecall}
+                            >
+                                Thu hồi
+                            </MenuItem>
+                        )}
+                    </MenuContent>
+                </MenuPositioner>
+            </Portal>
+        </MenuRoot>
+    );
     return (
         <div
             key={m.id}
@@ -40,35 +98,7 @@ const MessageItem = ({ message, prevMessages, index }) => {
                         marginRight: m.sender.id === user.id ? 8 : 0,
                     }}
                 >
-                    <MenuRoot>
-                        <MenuTrigger asChild>
-                            <IconButton
-                                size="2xs"
-                                color="gray"
-                                variant="ghost"
-                                backgroundColor="transparent"
-                                marginTop="10px"
-                                padding="5px"
-                            >
-                                <CiMenuKebab/>
-                            </IconButton>
-                        </MenuTrigger>
-                        <Portal>
-                            <MenuPositioner>
-                                <MenuArrow/>
-                                <MenuContent>
-                                    <MenuItem value="chuyentiep">Chuyển tiếp</MenuItem>
-                                    <MenuItem
-                                        value="recall"
-                                        color="fg.error"
-                                        _hover={{bg: "bg.error", color: "fg.error"}}
-                                    >
-                                        Thu hồi
-                                    </MenuItem>
-                                </MenuContent>
-                            </MenuPositioner>
-                        </Portal>
-                    </MenuRoot>
+                    {renderMenu()}
                 </div>
             )}
 
@@ -94,7 +124,7 @@ const MessageItem = ({ message, prevMessages, index }) => {
             {/* Tin nhắn */}
             <span
                 style={{
-                    backgroundColor: m.sender.id === user.id ? "#BEE3F8" : "#B9F5D0",
+                    backgroundColor: isRecalled || isDeleted ? "#EDF2F7" : (m.sender.id === user.id ? "#BEE3F8" : "#B9F5D0"),
                     marginLeft:
                         m.sender.id !== user.id
                             ? isSameSenderMargin(messages, m, index, user.id)
@@ -104,10 +134,12 @@ const MessageItem = ({ message, prevMessages, index }) => {
                     borderRadius: "20px",
                     padding: "5px 15px",
                     maxWidth: "75%",
-                    whiteSpace: "pre-wrap"
+                    whiteSpace: "pre-wrap",
+                    fontStyle: isRecalled || isDeleted ? "italic" : "normal",
+                    color: isRecalled || isDeleted ? "#718096" : "inherit"
                 }}
             >
-                            {m.content}
+                            {displayContent}
                         </span>
 
             {isHover && !isSentByUser && (
@@ -119,35 +151,7 @@ const MessageItem = ({ message, prevMessages, index }) => {
                         marginRight: m.sender.id === user.id ? 8 : 0,
                     }}
                 >
-                    <MenuRoot>
-                        <MenuTrigger asChild>
-                            <IconButton
-                                size="2xs"
-                                color="gray"
-                                variant="ghost"
-                                backgroundColor="transparent"
-                                marginTop="10px"
-                                padding="5px"
-                            >
-                                <CiMenuKebab/>
-                            </IconButton>
-                        </MenuTrigger>
-                        <Portal>
-                            <MenuPositioner>
-                                <MenuArrow/>
-                                <MenuContent>
-                                    <MenuItem value="chuyentiep">Chuyển tiếp</MenuItem>
-                                    <MenuItem
-                                        value="recall"
-                                        color="fg.error"
-                                        _hover={{bg: "bg.error", color: "fg.error"}}
-                                    >
-                                        Thu hồi
-                                    </MenuItem>
-                                </MenuContent>
-                            </MenuPositioner>
-                        </Portal>
-                    </MenuRoot>
+                    {renderMenu()}
                 </div>
             )}
 

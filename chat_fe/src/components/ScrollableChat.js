@@ -1,7 +1,7 @@
 import ScrollableFeed from "react-scrollable-feed";
 import MessageItem from "./MessageItem";
 
-const ScrollableChat = ({messages}) => {
+const ScrollableChat = ({messages, onRecall, onForward}) => {
     return (
         <ScrollableFeed>
             {messages &&
@@ -11,6 +11,8 @@ const ScrollableChat = ({messages}) => {
                             message={m}
                             prevMessages={messages}
                             index={i}
+                            onRecall={onRecall}
+                            onForward={onForward}
                         />
                     )
                 )}

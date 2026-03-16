@@ -35,8 +35,9 @@ public class AuthenticationController {
     }
 
     @PostMapping("/refresh-token")
-    public ResponseEntity<?> refreshToken(@CookieValue(value = "refreshToken", required = false) String token) {
-        return userService.refreshToken(token);
+    public ResponseEntity<?> refreshToken(@CookieValue(value = "refreshToken", required = false) String token,
+                                          HttpServletResponse response) {
+        return userService.refreshToken(token, response);
     }
 
     // logout user

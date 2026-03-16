@@ -1,9 +1,7 @@
-import { Avatar } from "@chakra-ui/react";
-import { Box, Text } from "@chakra-ui/react";
-import { ChatState } from "../../ChatProvider";
+import { AvatarFallback, AvatarImage, AvatarRoot, Box, Text } from "@chakra-ui/react";
 
-const UserListItem = ({ handleFunction }) => {
-  const { user } = ChatState();
+const UserListItem = ({ user, handleFunction }) => {
+  const fullName = `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
 
   return (
     <Box
@@ -23,18 +21,15 @@ const UserListItem = ({ handleFunction }) => {
       mb={2}
       borderRadius="lg"
     >
-      <Avatar
-        mr={2}
-        size="sm"
-        cursor="pointer"
-        name={user.name}
-        src={user.pic}
-      />
+      <AvatarRoot size="sm" marginRight={2} cursor="pointer">
+        <AvatarFallback name={fullName || user?.email} />
+        <AvatarImage src={user?.avt} />
+      </AvatarRoot>
       <Box>
-        <Text>{user.name}</Text>
+        <Text>{fullName || user?.email}</Text>
         <Text fontSize="xs">
           <b>Email : </b>
-          {user.email}
+          {user?.email}
         </Text>
       </Box>
     </Box>

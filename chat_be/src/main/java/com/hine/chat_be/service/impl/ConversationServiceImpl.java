@@ -53,4 +53,13 @@ public class ConversationServiceImpl implements ConversationService {
                 })
                 .toList();
     }
+
+    @Override
+    public ConversationDTO getOrCreatePrivateConversation(Long user1, Long user2) {
+        Conversation conversation = conversationRepository
+                .findPrivateConversation(user1, user2)
+                .orElseGet(() -> createPrivateConversation(user1, user2));
+
+        return new ConversationDTO().toDTO(conversation);
+    }
 }

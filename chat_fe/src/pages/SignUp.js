@@ -18,7 +18,6 @@ import {GoogleIcon, FacebookIcon, SitemarkIcon} from './CustomIcon';
 import TemplateFrame from "../customizations/TemplateFrame";
 import {login, signUp} from "../callAPI/API";
 import {useNavigate} from "react-router-dom";
-import {ChatState} from "../ChatProvider";
 import {toaster} from "../components/ui/toaster";
 
 const Card = styled(MuiCard)(({theme}) => ({
@@ -71,7 +70,6 @@ export default function SignUp() {
     const [passwordRepeatError, setPasswordRepeatError] = React.useState(false);
     const [passwordRepeatErrorMessage, setPasswordRepeatErrorMessage] = React.useState('');
 
-    const {setUser} = ChatState();
     const navigate = useNavigate();
 
     // This code only runs on the client side, to determine the system color preference
@@ -171,9 +169,9 @@ export default function SignUp() {
     };
 
     const handleSubmit = async (event) => {
+        event.preventDefault();
 
-        if (emailError || passwordError || passwordRepeatError || firstNameError || lastNameError) {
-            event.preventDefault();
+        if (!validateInputs()) {
             return;
         }
         const email = document.getElementById('email').value;
@@ -188,7 +186,7 @@ export default function SignUp() {
         };
 
         try {
-            const response = await signUp(data);
+            await signUp(data);
             toaster.create({
                 title: `Đăng ký thành công!`,
                 status: "success",
@@ -196,9 +194,7 @@ export default function SignUp() {
                 isClosable: true,
                 position: "bottom",
             });
-            setUser(response);
-            localStorage.setItem("userInfo", JSON.stringify(response));
-            navigate("/");
+            navigate("/login");
         } catch (error) {
             toaster.create({
                 title: error?.data,

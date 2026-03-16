@@ -18,7 +18,7 @@ import {FaChevronDown, FaBell,} from "react-icons/fa6";
 import {FaSearch} from "react-icons/fa";
 import {useNavigate} from "react-router-dom";
 import {useCallback, useEffect, useState} from "react";
-import axios from "axios";
+import {accessPrivateConversation, fetchConversation, searchUsers} from "../callAPI/API";
 import ChatLoading from "./ChatLoading";
 import {Spinner} from "@chakra-ui/react";
 import ProfileModal from "./ProfileModal";
@@ -50,11 +50,14 @@ function SideDrawer() {
         setChats,
     } = ChatState();
 
-    const {open, onOpen, onClose} = useDisclosure();
+    const {open, onOpen, onClose, setOpen} = useDisclosure();
     const {open: isOpenProfile, onOpen: onOpenProfile, onClose: onCloseProfile} = useDisclosure();
 
 
     const navigate = useNavigate();
+
+    console.log("[SideDrawer] User object for useSocket:", user);
+    console.log("[SideDrawer] user.id for useSocket:", user?.id);
 
     const handleNewNotification = useCallback((newNoti) => {
         console.log("this is called");
@@ -100,163 +103,48 @@ function SideDrawer() {
 
         try {
             setLoading(true);
-
-            const config = {
-                headers: {
-                    Authorization: `Bearer ${user.token}`,
-                },
-            };
-
-            // const { data } = await axios.get(`/api/user?search=${search}`, config);
-
+            const data = await searchUsers(search, user?.id);
+            setSearchResult(data);
             setLoading(false);
-            // setSearchResult(data);
         } catch (error) {
+            setLoading(false);
             toaster.create({
                 title: "Error Occured!",
-                description: "Failed to Load the Search Results",
+                description: error?.response?.data || "Failed to Load the Search Results",
                 status: "error",
                 duration: 5000,
                 isClosable: true,
                 position: "bottom-left",
             });
+            setSearchResult([]);
         }
     };
 
     const accessChat = async (userId) => {
-        console.log(userId);
-
         try {
             setLoadingChat(true);
-            const config = {
-                headers: {
-                    "Content-type": "application/json",
-                    Authorization: `Bearer ${user.token}`,
-                },
-            };
-            // const { data } = await axios.post(`/api/chat`, { userId }, config);
-            const data = [
-                {
-                    isGroupChat: false,
-                    users: [
-                        {
-                            name: "John Doe",
-                            email: "john@example.com",
-                        },
-                        {
-                            name: "Piyush",
-                            email: "piyush@example.com",
-                        },
-                    ],
-                    _id: "617a077e18c25468bc7c4dd4",
-                    chatName: "John Doe",
-                },
-                {
-                    isGroupChat: false,
-                    users: [
-                        {
-                            name: "Guest User",
-                            email: "guest@example.com",
-                        },
-                        {
-                            name: "Piyush",
-                            email: "piyush@example.com",
-                        },
-                    ],
-                    _id: "617a077e18c25468b27c4dd4",
-                    chatName: "Guest User",
-                },
-                {
-                    isGroupChat: false,
-                    users: [
-                        {
-                            name: "Anthony",
-                            email: "anthony@example.com",
-                        },
-                        {
-                            name: "Piyush",
-                            email: "piyush@example.com",
-                        },
-                    ],
-                    _id: "617a077e18c2d468bc7c4dd4",
-                    chatName: "Anthony",
-                },
-                {
-                    isGroupChat: true,
-                    users: [
-                        {
-                            name: "John Doe",
-                            email: "jon@example.com",
-                        },
-                        {
-                            name: "Piyush",
-                            email: "piyush@example.com",
-                        },
-                        {
-                            name: "Guest User",
-                            email: "guest@example.com",
-                        },
-                    ],
-                    _id: "617a518c4081150716472c78",
-                    chatName: "Friends",
-                    groupAdmin: {
-                        name: "Guest User",
-                        email: "guest@example.com",
-                    },
-                },
-                {
-                    isGroupChat: false,
-                    users: [
-                        {
-                            name: "Jane Doe",
-                            email: "jane@example.com",
-                        },
-                        {
-                            name: "Piyush",
-                            email: "piyush@example.com",
-                        },
-                    ],
-                    _id: "617a077e18c25468bc7cfdd4",
-                    chatName: "Jane Doe",
-                },
-                {
-                    isGroupChat: true,
-                    users: [
-                        {
-                            name: "John Doe",
-                            email: "jon@example.com",
-                        },
-                        {
-                            name: "Piyush",
-                            email: "piyush@example.com",
-                        },
-                        {
-                            name: "Guest User",
-                            email: "guest@example.com",
-                        },
-                    ],
-                    _id: "617a518c4081150016472c78",
-                    chatName: "Chill Zone",
-                    groupAdmin: {
-                        name: "Guest User",
-                        email: "guest@example.com",
-                    },
-                },
-            ];
+            const data = await accessPrivateConversation(user?.id, userId);
+            console.log("[SideDrawer] accessChat data:", data);
+            if (!data || !data.id) {
+                throw new Error("Conversation not returned from server");
+            }
 
-            if (!chats.find((c) => c._id === data._id)) setChats([data, ...chats]);
-            setSelectedChat(data);
-            setLoadingChat(false);
-            onClose();
+            const refreshed = await fetchConversation(user?.id);
+            setChats(refreshed);
+            const selected = refreshed?.find((c) => c.id === data.id) || data;
+            setSelectedChat(selected);
+            setOpen(false);
         } catch (error) {
             toaster.create({
                 title: "Error fetching the chat",
-                description: error.message,
+                description: error?.response?.data || error.message,
                 status: "error",
                 duration: 5000,
                 isClosable: true,
                 position: "bottom-left",
             });
+        } finally {
+            setLoadingChat(false);
         }
     };
 
@@ -273,7 +161,11 @@ function SideDrawer() {
                 borderRadius="lg"
                 boxShadow="md"
             >
-                <DrawerRoot placement="start" onOpenChange={onOpen} isOpen={open}>
+                <DrawerRoot
+                    placement="start"
+                    open={open}
+                    onOpenChange={(details) => setOpen(details.open)}
+                >
                     <DrawerTrigger asChild>
                         <Button variant="ghost" onClick={onOpen}>
                             {/*<i className="fas fa-search"></i>*/}
@@ -301,13 +193,21 @@ function SideDrawer() {
                                     {loading ? (
                                         <ChatLoading/>
                                     ) : (
-                                        searchResult?.map((user) => (
-                                            <UserListItem
-                                                key={user._id}
-                                                user={user}
-                                                handleFunction={() => accessChat(user.id)}
-                                            />
-                                        ))
+                                        <>
+                                            {searchResult?.length ? (
+                                                searchResult.map((user) => (
+                                                    <UserListItem
+                                                        key={user.id}
+                                                        user={user}
+                                                        handleFunction={() => accessChat(user.id)}
+                                                    />
+                                                ))
+                                            ) : (
+                                                <Text fontSize="sm" color="gray.500" mt={2}>
+                                                    KhÃ´ng tÃ¬m tháº¥y káº¿t quáº£
+                                                </Text>
+                                            )}
+                                        </>
                                     )}
                                     {loadingChat && <Spinner ml="auto" display="flex"/>}
                                 </DrawerBody>

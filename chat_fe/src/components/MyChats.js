@@ -13,6 +13,7 @@ const MyChats = ({fetchAgain}) => {
     const [loggedUser, setLoggedUser] = useState(null);
     const {selectedChat, setSelectedChat, user, chats, setChats} = ChatState();
 
+    console.log("selectedChat: ", selectedChat);
     const fetchChats = () => {
         fetchConversation(user.id)
             .then((data) => {
@@ -73,44 +74,50 @@ const MyChats = ({fetchAgain}) => {
                 overflowY="hidden"
             >
                 {chats ? (
-                    <Stack overflowY="scroll">
-                        {chats.map((chat) => (
-                            <Box
-                                onClick={() => {
-                                    setSelectedChat(chat)
-                                    console.log(selectedChat)
-                                }}
-                                cursor="pointer"
-                                bg={selectedChat === chat ? "#38B2AC" : "#E8E8E8"}
-                                color={selectedChat === chat ? "white" : "black"}
-                                px={3}
-                                py={2}
-                                borderRadius="lg"
-                                key={chat.id}
-                                display="flex"
-                            >
-                                <AvatarRoot colorPalette="green" size="sm" marginRight="5px">
-                                    <AvatarFallback name={getSenderFull(user, chat.members).user.firstName}/>
-                                    <AvatarImage src={getSenderFull(user, chat.members).user.avt} alt={getSenderFull(user, chat.members).user.firstName}/>
-                                </AvatarRoot>
-                                <div>
-                                    <Text fontWeight="bold">
-                                        {!chat.group
-                                            ? getSender(loggedUser, chat.members)
-                                            : "group chat"}
-                                    </Text>
-                                    {chat.lastMessage && (
-                                        <Text fontSize="xs">
-                                            <b>{chat.lastMessage.sender.firstName} : </b>
-                                            {chat.lastMessage.content.length > 25
-                                                ? chat.lastMessage.content.substring(0, 26) + "..."
-                                                : chat.lastMessage.content}
+                    chats.length > 0 ? (
+                        <Stack overflowY="scroll">
+                            {chats.map((chat) => (
+                                <Box
+                                    onClick={() => {
+                                        setSelectedChat(chat)
+                                        console.log(selectedChat)
+                                    }}
+                                    cursor="pointer"
+                                    bg={selectedChat === chat ? "#38B2AC" : "#E8E8E8"}
+                                    color={selectedChat === chat ? "white" : "black"}
+                                    px={3}
+                                    py={2}
+                                    borderRadius="lg"
+                                    key={chat.id}
+                                    display="flex"
+                                >
+                                    <AvatarRoot colorPalette="green" size="sm" marginRight="5px">
+                                        <AvatarFallback name={getSenderFull(user, chat.members).user.firstName}/>
+                                        <AvatarImage src={getSenderFull(user, chat.members).user.avt} alt={getSenderFull(user, chat.members).user.firstName}/>
+                                    </AvatarRoot>
+                                    <div>
+                                        <Text fontWeight="bold">
+                                            {!chat.group
+                                                ? getSender(loggedUser, chat.members)
+                                                : "group chat"}
                                         </Text>
-                                    )}
-                                </div>
-                            </Box>
-                        ))}
-                    </Stack>
+                                        {chat.lastMessage && (
+                                            <Text fontSize="xs">
+                                                <b>{chat.lastMessage.sender.firstName} : </b>
+                                                {chat.lastMessage.content.length > 25
+                                                    ? chat.lastMessage.content.substring(0, 26) + "..."
+                                                    : chat.lastMessage.content}
+                                            </Text>
+                                        )}
+                                    </div>
+                                </Box>
+                            ))}
+                        </Stack>
+                    ) : (
+                        <Text fontSize="sm" color="gray.500" mt={2}>
+                            ChÆ°a cÃ³ cuá»™c trÃ² chuyá»‡n nÃ o
+                        </Text>
+                    )
                 ) : (
                     <ChatLoading/>
                 )}

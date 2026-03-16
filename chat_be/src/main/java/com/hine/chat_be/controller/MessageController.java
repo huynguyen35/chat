@@ -1,7 +1,6 @@
 package com.hine.chat_be.controller;
 
 
-import com.hine.chat_be.entity.Message;
 import com.hine.chat_be.payload.MessageDTO;
 import com.hine.chat_be.payload.MessageRequest;
 import com.hine.chat_be.service.MessageService;
@@ -34,7 +33,7 @@ public class MessageController {
     // Recall message
     @PutMapping("/recall/{messageId}")
     public ResponseEntity<?> recallMessage(@PathVariable Long messageId) {
-        Optional<Message> message = messageService.recallMessage(messageId);
+        Optional<MessageDTO> message = messageService.recallMessage(messageId);
 
         if (message.isPresent()) {
             return ResponseEntity.ok(message.get());
@@ -46,7 +45,7 @@ public class MessageController {
     // Delete message
     @DeleteMapping("/delete/{messageId}")
     public ResponseEntity<?> deleteMessage(@PathVariable Long messageId) {
-        Optional<Message> message = messageService.deleteMessage(messageId);
+        Optional<MessageDTO> message = messageService.deleteMessage(messageId);
 
         if (message.isPresent()) {
             return ResponseEntity.ok(message.get());

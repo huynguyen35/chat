@@ -3,10 +3,11 @@ import { useEffect, useRef } from "react";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 
-export default function useSocket({ userId, conversationId, onMessage, onNotification }) {
+export default function useSocket({ userId, conversationId, onMessage, onNotification, onCallSignal }) {
     const stompClientRef = useRef(null);
     const messageSubscriptionRef = useRef(null);
     const notificationSubscriptionRef = useRef(null);
+    const callSubscriptionRef = useRef(null);
 
     useEffect(() => {
         console.log(`[useSocket EFFECT RUN] userId: ${userId}, conversationId: ${conversationId}`);
@@ -24,6 +25,7 @@ export default function useSocket({ userId, conversationId, onMessage, onNotific
             if (stompClientRef.current?.active) {
                 messageSubscriptionRef.current?.unsubscribe();
                 notificationSubscriptionRef.current?.unsubscribe();
+                callSubscriptionRef.current?.unsubscribe();
                 stompClientRef.current.deactivate();
                 stompClientRef.current = null;
                 messageSubscriptionRef.current = null;
@@ -45,6 +47,7 @@ export default function useSocket({ userId, conversationId, onMessage, onNotific
                 // Hủy subscription cũ trước khi tạo mới (nếu có)
                 messageSubscriptionRef.current?.unsubscribe();
                 notificationSubscriptionRef.current?.unsubscribe();
+                callSubscriptionRef.current?.unsubscribe();
 
                 if (conversationId) {
                     console.log(`[useSocket ONCONNECT] Subscribing to messages /topic/conversation/${conversationId}`);
@@ -89,6 +92,21 @@ export default function useSocket({ userId, conversationId, onMessage, onNotific
                             }
                         }
                     );
+
+                    console.log(`[useSocket ONCONNECT] Subscribing to call signals /user/queue/call`);
+                    callSubscriptionRef.current = stompClient.subscribe(
+                        `/user/queue/call`,
+                        (signal) => {
+                            console.log(`[useSocket RAW CALL SIGNAL] Received for /user/queue/call`, signal);
+                            try {
+                                const callSignal = JSON.parse(signal.body);
+                                console.log("[useSocket PARSED CALL SIGNAL]", callSignal);
+                                onCallSignal?.(callSignal);
+                            } catch (e) {
+                                console.error("[useSocket] Error parsing call signal JSON:", e, "Raw body:", signal.body);
+                            }
+                        }
+                    );
                 }
             },
             onStompError: (frame) => {
@@ -112,6 +130,10 @@ export default function useSocket({ userId, conversationId, onMessage, onNotific
                 notificationSubscriptionRef.current.unsubscribe();
                 notificationSubscriptionRef.current = null;
             }
+            if (callSubscriptionRef.current) {
+                callSubscriptionRef.current.unsubscribe();
+                callSubscriptionRef.current = null;
+            }
             if (stompClient?.active) {
                 stompClient.deactivate();
             }
@@ -119,7 +141,7 @@ export default function useSocket({ userId, conversationId, onMessage, onNotific
                 stompClientRef.current = null;
             }
         };
-    }, [userId, conversationId, onMessage, onNotification]); // Giữ onMessage, onNotification trong dependencies
+    }, [userId, conversationId, onMessage, onNotification, onCallSignal]); // Giữ onMessage, onNotification trong dependencies
 
     const sendMessage = (destination, payload) => {
         if (!stompClientRef.current?.connected) {

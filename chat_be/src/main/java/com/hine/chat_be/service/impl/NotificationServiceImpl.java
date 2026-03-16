@@ -23,9 +23,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void senNotificationToUser(Long userId, NotificationDTO notificationDTO) {
-         System.out.println("Sending notification to user: " + userId);
         messagingTemplate.convertAndSendToUser(userId.toString(), "/queue/notification", notificationDTO);
-
     }
 
     @Override

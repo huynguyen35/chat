@@ -99,26 +99,26 @@ public class MessageServiceImpl implements MessageService {
     }
 
     @Override
-    public Optional<Message> recallMessage(Long messageId) {
+    public Optional<MessageDTO> recallMessage(Long messageId) {
         Optional<Message> messageOptional = messageRepository.findById(messageId);
         if (messageOptional.isPresent()) {
             Message message = messageOptional.get();
             message.setRecalled(true);
             messageRepository.save(message);
-            return Optional.of(message);
+            return Optional.of(new MessageDTO().toDTO(message));
         } else {
             return Optional.empty();
         }
     }
 
     @Override
-    public Optional<Message> deleteMessage(Long messageId) {
+    public Optional<MessageDTO> deleteMessage(Long messageId) {
         Optional<Message> messageOptional = messageRepository.findById(messageId);
         if (messageOptional.isPresent()) {
             Message message = messageOptional.get();
             message.setDeleted(true);
             messageRepository.save(message);
-            return Optional.of(message);
+            return Optional.of(new MessageDTO().toDTO(message));
         } else {
             return Optional.empty();
         }

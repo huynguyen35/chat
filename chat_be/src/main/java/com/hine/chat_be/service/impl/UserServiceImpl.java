@@ -8,13 +8,17 @@ import com.hine.chat_be.payload.RegisterRequest;
 import com.hine.chat_be.payload.UserInfo;
 import com.hine.chat_be.repository.UserRepository;
 import com.hine.chat_be.service.UserService;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -68,20 +72,24 @@ public class UserServiceImpl implements UserService {
             loginResponse.setAvt(user.getAvt());
 
             // set access token to cookie
-            Cookie cookie = new Cookie("jwt", jwt);
-            cookie.setHttpOnly(true);
-            cookie.setPath("/");
-            cookie.setMaxAge(60 * 60); // 1 hour
-            cookie.setSecure(false); // Chỉ gửi cookie qua HTTPS
-            response.addCookie(cookie);
+            ResponseCookie accessCookie = ResponseCookie.from("jwt", jwt)
+                    .httpOnly(true)
+                    .secure(false)
+                    .path("/")
+                    .sameSite("Lax")
+                    .maxAge(60 * 60)
+                    .build();
+            response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
 
             // set refresh token to cookie
-            Cookie cookieRefresh = new Cookie("refreshToken", refreshToken);
-            cookieRefresh.setHttpOnly(true);
-            cookieRefresh.setPath("/");
-            cookieRefresh.setMaxAge(60 * 60 * 24 * 7); // 7 days
-            cookieRefresh.setSecure(false); // Chỉ gửi cookie qua HTTPS
-            response.addCookie(cookieRefresh);
+            ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", refreshToken)
+                    .httpOnly(true)
+                    .secure(false)
+                    .path("/")
+                    .sameSite("Lax")
+                    .maxAge(60 * 60 * 24 * 7)
+                    .build();
+            response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
 
 
             return ResponseEntity.ok(loginResponse);
@@ -91,7 +99,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public ResponseEntity<?> refreshToken(String token) {
+    public ResponseEntity<?> refreshToken(String token, HttpServletResponse response) {
         if (token == null || !jwtUtil.validateToken(token)) {
             return ResponseEntity.status(401).body("Invalid refresh token");
         }
@@ -100,15 +108,15 @@ public class UserServiceImpl implements UserService {
         Long userId = jwtUtil.extractUserId(token);
         String newAccessToken = jwtUtil.generateToken(username, userId);
 
-        // set new access token to cookie
-        Cookie cookie = new Cookie("jwt", newAccessToken);
-        cookie.setHttpOnly(true);
-        cookie.setPath("/");
-        cookie.setMaxAge(60 * 60); // 1 hour
-        cookie.setSecure(false); // Chỉ gửi cookie qua HTTPS
-        HttpServletResponse response = null; // You need to pass the response object here
-        response.addCookie(cookie);
-
+                // set new access token to cookie
+        ResponseCookie accessCookie = ResponseCookie.from("jwt", newAccessToken)
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .sameSite("Lax")
+                .maxAge(60 * 60)
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
 
         return ResponseEntity.ok("ok");
     }
@@ -143,4 +151,19 @@ public class UserServiceImpl implements UserService {
         }
         return null;
     }
+
+    @Override
+    public List<UserInfo> searchUsers(String query, Long excludeUserId) {
+        if (query == null || query.trim().isEmpty()) {
+            return List.of();
+        }
+        String q = query.trim();
+        List<User> users = userRepository.searchUsers(q);
+        return users.stream()
+                .filter(user -> excludeUserId == null || !user.getId().equals(excludeUserId))
+                .map(user -> new UserInfo().toUserDTO(user))
+                .collect(Collectors.toList());
+    }
 }
+
+

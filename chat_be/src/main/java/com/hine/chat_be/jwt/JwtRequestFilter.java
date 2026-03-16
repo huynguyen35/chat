@@ -6,6 +6,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -76,12 +78,14 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                     String newJwt = jwtUtil.generateToken(refreshUsername, refreshUserId);
 
                     // Set lại cookie jwt
-                    Cookie newAccessTokenCookie = new Cookie("jwt", newJwt);
-                    newAccessTokenCookie.setHttpOnly(true);
-                    newAccessTokenCookie.setSecure(true);
-                    newAccessTokenCookie.setPath("/");
-                    newAccessTokenCookie.setMaxAge(60 * 60); // ví dụ: 1h
-                    response.addCookie(newAccessTokenCookie);
+                    ResponseCookie newAccessTokenCookie = ResponseCookie.from("jwt", newJwt)
+                            .httpOnly(true)
+                            .secure(false)
+                            .path("/")
+                            .sameSite("Lax")
+                            .maxAge(60 * 60)
+                            .build();
+                    response.addHeader(HttpHeaders.SET_COOKIE, newAccessTokenCookie.toString());
 
                     // Set authentication vào context
                     UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
@@ -98,3 +102,4 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 }
+

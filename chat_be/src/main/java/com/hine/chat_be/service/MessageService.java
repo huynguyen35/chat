@@ -1,6 +1,5 @@
 package com.hine.chat_be.service;
 
-import com.hine.chat_be.entity.Message;
 import com.hine.chat_be.payload.MessageDTO;
 import com.hine.chat_be.payload.MessageRequest;
 import org.springframework.stereotype.Service;
@@ -14,7 +13,7 @@ public interface MessageService {
 
     List<MessageDTO> getMessages(Integer conversationId);
 
-    Optional<Message> recallMessage(Long messageId);
+    Optional<MessageDTO> recallMessage(Long messageId);
 
-    Optional<Message> deleteMessage(Long messageId);
+    Optional<MessageDTO> deleteMessage(Long messageId);
 }

@@ -41,8 +41,6 @@ public class CustomHandshakeHandler extends DefaultHandshakeHandler {
 
             if (jwtToken != null && jwtUtil.validateToken(jwtToken)) {
                 Long userId = jwtUtil.extractUserId(jwtToken);
-                System.out.println("JWT Token: " + jwtToken);
-                System.out.println("User ID: " + userId);
                 return () -> String.valueOf(userId);
             }
         }

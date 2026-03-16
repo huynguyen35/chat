@@ -5,6 +5,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.hine.chat_be.payload.UserInfo;
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/user")
 public class UserController {
@@ -22,5 +25,14 @@ public class UserController {
     @PutMapping("/update-image/{id}")
     public ResponseEntity<?> updateUserImage(@PathVariable Long id, @RequestParam String avt) {
         return ResponseEntity.ok(userService.updateUserImage(id, avt));
+    }
+
+    // search users by name or email
+    @GetMapping
+    public ResponseEntity<List<UserInfo>> searchUsers(
+            @RequestParam(name = "search") String search,
+            @RequestParam(name = "excludeId", required = false) Long excludeId
+    ) {
+        return ResponseEntity.ok(userService.searchUsers(search, excludeId));
     }
 }

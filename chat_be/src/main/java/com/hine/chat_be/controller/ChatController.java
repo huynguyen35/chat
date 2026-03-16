@@ -1,6 +1,5 @@
 package com.hine.chat_be.controller;
 
-import com.hine.chat_be.entity.Message;
 import com.hine.chat_be.payload.MessageDTO;
 import com.hine.chat_be.payload.MessageRequest;
 import com.hine.chat_be.payload.RecallRequest;
@@ -33,16 +32,16 @@ public class ChatController {
     // Recall the message
     @MessageMapping("/chat.recall")
     public void recallMessage(@Payload RecallRequest request) {
-        Optional<Message> recalledMessage = messageService.recallMessage(request.getMessageId());
+        Optional<MessageDTO> recalledMessage = messageService.recallMessage(request.getMessageId());
         // Send the recalled message to the appropriate topic
-        messagingTemplate.convertAndSend("/topic/conversation/" + request.getConversationId(), recalledMessage);
+        messagingTemplate.convertAndSend("/topic/conversation/" + request.getConversationId(), recalledMessage.orElse(null));
     }
 
     // Delete the message
     @MessageMapping("/chat.delete")
     public void deleteMessage(@Payload RecallRequest request) {
-        Optional<Message> deletedMessage = messageService.deleteMessage(request.getMessageId());
+        Optional<MessageDTO> deletedMessage = messageService.deleteMessage(request.getMessageId());
         // Send the deleted message to the appropriate topic
-        messagingTemplate.convertAndSend("/topic/conversation/" + request.getConversationId(), deletedMessage);
+        messagingTemplate.convertAndSend("/topic/conversation/" + request.getConversationId(), deletedMessage.orElse(null));
     }
 }
