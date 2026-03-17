@@ -115,7 +115,7 @@ const MyChats = ({fetchAgain}) => {
                         </Stack>
                     ) : (
                         <Text fontSize="sm" color="gray.500" mt={2}>
-                            ChÆ°a cÃ³ cuá»™c trÃ² chuyá»‡n nÃ o
+                            Chưa có cuộc trò chuyện nào
                         </Text>
                     )
                 ) : (

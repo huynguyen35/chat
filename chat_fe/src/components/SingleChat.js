@@ -35,6 +35,7 @@ const SingleChat = ({fetchAgain, setFetchAgain}) => {
     const [callDurationSec, setCallDurationSec] = useState(0);
     const callStartRef = useRef(null);
     const durationTimerRef = useRef(null);
+    const callTimeoutRef = useRef(null);
     const inputRef = useRef(null);
     const remoteAudioRef = useRef(null);
     const localStreamRef = useRef(null);
@@ -46,6 +47,7 @@ const SingleChat = ({fetchAgain, setFetchAgain}) => {
     const callAnsweredRef = useRef(false);
     const callReceiverIdRef = useRef(null);
     const sendCallSignalRef = useRef(null);
+    const sendChatMessageRef = useRef(null);
 
     const {open, onOpen, onClose} = useDisclosure();
 
@@ -109,6 +111,10 @@ const SingleChat = ({fetchAgain, setFetchAgain}) => {
             remoteAudioRef.current.srcObject = null;
         }
         pendingOfferRef.current = null;
+        if (callTimeoutRef.current) {
+            clearTimeout(callTimeoutRef.current);
+            callTimeoutRef.current = null;
+        }
         callStartRef.current = null;
         setCallDurationSec(0);
         setIncomingCallerName("");
@@ -126,7 +132,7 @@ const SingleChat = ({fetchAgain, setFetchAgain}) => {
                 ? `Cuoc goi ket thuc (${formatDuration(durationSec)})`
                 : "Cuoc goi nho";
             if (receiverId) {
-                sendMessage("/app/chat.send", {
+                sendChatMessageRef.current?.({
                     content,
                     conversationId,
                     senderId: user.id,
@@ -139,7 +145,7 @@ const SingleChat = ({fetchAgain, setFetchAgain}) => {
         callIsCallerRef.current = false;
         callAnsweredRef.current = false;
         callReceiverIdRef.current = null;
-    }, [formatDuration, selectedChat?.id, user, chats, sendMessage]);
+    }, [formatDuration, selectedChat?.id, user, chats]);
 
     const handleCallSignal = useCallback(async (signal) => {
         if (!signal || !signal.conversationId) return;
@@ -184,6 +190,10 @@ const SingleChat = ({fetchAgain, setFetchAgain}) => {
         }
 
         if (signal.type === "ANSWER") {
+            if (callTimeoutRef.current) {
+                clearTimeout(callTimeoutRef.current);
+                callTimeoutRef.current = null;
+            }
             callAnsweredRef.current = true;
             if (!peerRef.current || !signal.sdp) return;
             await peerRef.current.setRemoteDescription({type: "answer", sdp: signal.sdp});
@@ -276,6 +286,12 @@ const SingleChat = ({fetchAgain, setFetchAgain}) => {
         sendCallSignalRef.current = sendCallSignal;
     }, [sendCallSignal]);
 
+    useEffect(() => {
+        sendChatMessageRef.current = (payload) => {
+            sendMessage("/app/chat.send", payload);
+        };
+    }, [sendMessage]);
+
     const createPeerConnection = useCallback(() => {
         const pc = new RTCPeerConnection({
             iceServers: [{urls: "stun:stun.l.google.com:19302"}],
@@ -324,6 +340,15 @@ const SingleChat = ({fetchAgain, setFetchAgain}) => {
 
         try {
             setCallStatus("calling");
+            if (callTimeoutRef.current) {
+                clearTimeout(callTimeoutRef.current);
+            }
+            callTimeoutRef.current = setTimeout(() => {
+                if (!callAnsweredRef.current && callStatusRef.current === "calling") {
+                    sendCallSignal({type: "HANGUP"});
+                    endCallCleanup();
+                }
+            }, 450000);
             callConversationIdRef.current = selectedChat.id;
             const stream = await navigator.mediaDevices.getUserMedia({audio: true, video: false});
             localStreamRef.current = stream;
@@ -356,6 +381,10 @@ const SingleChat = ({fetchAgain, setFetchAgain}) => {
         const conversationId = callConversationIdRef.current || selectedChat?.id;
         if (!pendingOfferRef.current || !conversationId) return;
         try {
+            if (callTimeoutRef.current) {
+                clearTimeout(callTimeoutRef.current);
+                callTimeoutRef.current = null;
+            }
             callIsCallerRef.current = false;
             callAnsweredRef.current = true;
             setCallStatus("in-call");
@@ -393,11 +422,19 @@ const SingleChat = ({fetchAgain, setFetchAgain}) => {
     }, [createPeerConnection, endCallCleanup, selectedChat, sendCallSignal]);
 
     const declineCall = useCallback(() => {
+        if (callTimeoutRef.current) {
+            clearTimeout(callTimeoutRef.current);
+            callTimeoutRef.current = null;
+        }
         sendCallSignal({type: "REJECT"});
         endCallCleanup();
     }, [endCallCleanup, sendCallSignal]);
 
     const hangupCall = useCallback(() => {
+        if (callTimeoutRef.current) {
+            clearTimeout(callTimeoutRef.current);
+            callTimeoutRef.current = null;
+        }
         sendCallSignal({type: "HANGUP"});
         endCallCleanup();
     }, [endCallCleanup, sendCallSignal]);
@@ -496,9 +533,8 @@ const SingleChat = ({fetchAgain, setFetchAgain}) => {
             endCallCleanup();
         };
     }, [selectedChat?.id, endCallCleanup]);
-    // console.log("Current messages in SingleChat:", messages); // Log để debug
 
-    // ... JSX của bạn không đổi
+
     return (
         <>
             {selectedChat ? (
@@ -585,27 +621,31 @@ const SingleChat = ({fetchAgain, setFetchAgain}) => {
                                 borderRadius="md"
                                 p={2}
                                 mb={3}
+                                width={500}
+                                alignSelf={"center"}
                             >
-                                <Flex align="center" justify="space-between">
-                                    <Text fontSize="sm">
-                                        {callStatus === "calling" && "�ang g?i..."}
-                                        {callStatus === "ringing" && `Cu?c g?i d?n t? ${incomingCallerName}`}
-                                        {callStatus === "in-call" && `Dang trong cuoc goi (${formatDuration(callDurationSec)})`}
-                                    </Text>
+                                <Flex align="center" justify="space-between" direction="column">
+                                    <Box margin={25}>
+                                        <Text fontSize="lg" fontWeight="semibold">
+                                            {callStatus === "calling" && "Đang gọi"}
+                                            {callStatus === "ringing" && `Cuộc gọi đến từ  ${incomingCallerName}`}
+                                            {callStatus === "in-call" && `Đang trong trong cuộc gọi (${formatDuration(callDurationSec)})`}
+                                        </Text>
+                                    </Box>
                                     <Flex gap={2}>
                                         {callStatus === "ringing" && (
                                             <>
-                                                <Button size="sm" colorScheme="green" onClick={acceptCall}>
-                                                    Nh?n
+                                                <Button size="sm" colorPalette="green" onClick={acceptCall}>
+                                                    Trả lời
                                                 </Button>
-                                                <Button size="sm" colorScheme="red" onClick={declineCall}>
-                                                    T? ch?i
+                                                <Button size="sm" colorPalette="red" onClick={declineCall}>
+                                                    Từ chối
                                                 </Button>
                                             </>
                                         )}
                                         {(callStatus === "calling" || callStatus === "in-call") && (
-                                            <Button size="sm" colorScheme="red" onClick={hangupCall}>
-                                                K?t th�c
+                                            <Button size="sm" colorPalette="red" onClick={hangupCall}>
+                                                Kết thúc
                                             </Button>
                                         )}
                                     </Flex>

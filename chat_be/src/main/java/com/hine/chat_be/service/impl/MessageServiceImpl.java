@@ -10,6 +10,7 @@ import com.hine.chat_be.payload.MessageRequest;
 import com.hine.chat_be.payload.NotificationDTO;
 import com.hine.chat_be.payload.UserInfo;
 import com.hine.chat_be.repository.ConversationRepository;
+import com.hine.chat_be.repository.ConversationMemberRepository;
 import com.hine.chat_be.repository.MessageRepository;
 import com.hine.chat_be.repository.NotificationRepository;
 import com.hine.chat_be.repository.UserRepository;
@@ -35,6 +36,9 @@ public class MessageServiceImpl implements MessageService {
     private ConversationRepository conversationRepository;
 
     @Autowired
+    private ConversationMemberRepository conversationMemberRepository;
+
+    @Autowired
     private ConversationService conversationService;
 
     @Autowired
@@ -56,11 +60,29 @@ public class MessageServiceImpl implements MessageService {
     @Override
     @Transactional
     public MessageDTO sendMessage(MessageRequest request) {
-        Conversation conversation = conversationRepository.findPrivateConversation(request.getSenderId(), request.getReceiverId())
-                .orElseGet(() -> conversationService.createPrivateConversation(request.getSenderId(), request.getReceiverId()));
+        Conversation conversation;
+        if (request.getConversationId() != null) {
+            conversation = conversationRepository.findById(request.getConversationId())
+                    .orElseThrow(() -> new RuntimeException("Conversation not found"));
+        } else {
+            conversation = conversationRepository.findPrivateConversation(request.getSenderId(), request.getReceiverId())
+                    .orElseGet(() -> conversationService.createPrivateConversation(request.getSenderId(), request.getReceiverId()));
+        }
 
         User sender = userRepository.findById(request.getSenderId()).orElseThrow(() -> new RuntimeException("User not found"));
-        User receiver = userRepository.findById(request.getReceiverId()).orElseThrow(() -> new RuntimeException("User not found"));
+        User receiver = null;
+        if (request.getReceiverId() != null) {
+            receiver = userRepository.findById(request.getReceiverId()).orElseThrow(() -> new RuntimeException("User not found"));
+        } else if (!conversation.isGroup() && conversation.getConversationMembers() != null) {
+            Long receiverId = conversation.getConversationMembers().stream()
+                    .map(cm -> cm.getUser().getId())
+                    .filter(id -> !id.equals(sender.getId()))
+                    .findFirst()
+                    .orElse(null);
+            if (receiverId != null) {
+                receiver = userRepository.findById(receiverId).orElse(null);
+            }
+        }
 
         // Save the message
         Message message = new Message();
@@ -70,23 +92,26 @@ public class MessageServiceImpl implements MessageService {
         message.setMessageType(request.getType());
         message = messageRepository.save(message);
 
-        // Create, save, and send the notification
-        Notification notification = new Notification();
-        notification.setSender(sender);
-        notification.setReceiver(receiver);
-        notification.setNotificationType(NotificationType.MESSAGE);
-        notification.setReferenceId(conversation.getId());
-        notification.setContent("Bạn có tin nhắn mới từ " + sender.getFirstName() + " " + sender.getLastName());
-        notification.setRead(false);
-        notification = notificationRepository.save(notification);
+        conversation.setLastMessage(message);
+        conversationRepository.save(conversation);
 
-        NotificationDTO notificationDTO = new NotificationDTO().toDTO(notification);
+        if (receiver != null) {
+            // Create, save, and send the notification
+            Notification notification = new Notification();
+            notification.setSender(sender);
+            notification.setReceiver(receiver);
+            notification.setNotificationType(NotificationType.MESSAGE);
+            notification.setReferenceId(conversation.getId());
+            notification.setContent("Bạn có tin nhắn mới từ " + sender.getFirstName() + " " + sender.getLastName());
+            notification.setRead(false);
+            notification = notificationRepository.save(notification);
+
+            NotificationDTO notificationDTO = new NotificationDTO().toDTO(notification);
+            // Send notification to the receiver
+            notificationService.senNotificationToUser(receiver.getId(), notificationDTO);
+        }
 
         MessageDTO messageDTO = new MessageDTO().toDTO(message);
-
-        // Send notification to the receiver
-        notificationService.senNotificationToUser(receiver.getId(), notificationDTO);
-
         return messageDTO;
     }
 
