@@ -4,6 +4,7 @@ import com.hine.chat_be.jwt.JwtRequestFilter;
 import com.hine.chat_be.jwt.JwtUtil;
 import com.hine.chat_be.service.impl.CustomUserDetailService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -29,6 +30,9 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Autowired
     private CustomUserDetailService customUserDetailService;
+
+    @Value("${app.cors.allowed-origins:http://localhost:*}")
+    private String[] corsAllowedOrigins;
 
     // Bean để mã hóa mật khẩu
     @Bean
@@ -70,7 +74,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOriginPatterns("http://localhost:*")
+                .allowedOriginPatterns(corsAllowedOrigins)
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true);

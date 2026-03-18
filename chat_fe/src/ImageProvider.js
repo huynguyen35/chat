@@ -1,5 +1,7 @@
 export const imgProvider = async (imageData) => {
-    const apiUrl = `https://api.imgbb.com/1/upload?key=0a380fc308aca047a31367fd4627ffc9`;
+    const baseUrl = process.env.REACT_APP_IMGBB_URL || "https://api.imgbb.com/1/upload";
+    const apiKey = process.env.REACT_APP_IMGBB_KEY || "";
+    const apiUrl = `${baseUrl}?key=${apiKey}`;
 
     const formData = new FormData();
     formData.append("image", imageData);

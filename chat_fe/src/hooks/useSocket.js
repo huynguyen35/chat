@@ -35,7 +35,8 @@ export default function useSocket({ userId, conversationId, onMessage, onNotific
         }
 
 
-        const socket = new SockJS("http://localhost:8080/ws");
+        const socketUrl = process.env.REACT_APP_SOCKET_URL || "http://localhost:8080/ws";
+        const socket = new SockJS(socketUrl);
         const stompClient = new Client({
             webSocketFactory: () => socket,
             debug: (str) => console.log("[STOMP CLIENT DEBUG]", str), // Log debug từ thư viện STOMP
