@@ -6,6 +6,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -25,6 +26,12 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
 
     private final UserDetailsService userDetailsService;
+
+    @Value("${app.cookie.secure:false}")
+    private boolean cookieSecure;
+
+    @Value("${app.cookie.same-site:Lax}")
+    private String cookieSameSite;
 
     public JwtRequestFilter(JwtUtil jwtUtil, UserDetailsService userDetailsService) {
         this.jwtUtil = jwtUtil;
@@ -80,9 +87,9 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                     // Set lại cookie jwt
                     ResponseCookie newAccessTokenCookie = ResponseCookie.from("jwt", newJwt)
                             .httpOnly(true)
-                            .secure(false)
+                            .secure(cookieSecure)
                             .path("/")
-                            .sameSite("Lax")
+                            .sameSite(cookieSameSite)
                             .maxAge(60 * 60)
                             .build();
                     response.addHeader(HttpHeaders.SET_COOKIE, newAccessTokenCookie.toString());

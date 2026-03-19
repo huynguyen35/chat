@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,6 +33,12 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private JwtUtil jwtUtil;
+
+    @Value("${app.cookie.secure:false}")
+    private boolean cookieSecure;
+
+    @Value("${app.cookie.same-site:Lax}")
+    private String cookieSameSite;
 
     @Override
     public ResponseEntity<?> register(RegisterRequest registerRequest) {
@@ -74,9 +81,9 @@ public class UserServiceImpl implements UserService {
             // set access token to cookie
             ResponseCookie accessCookie = ResponseCookie.from("jwt", jwt)
                     .httpOnly(true)
-                    .secure(false)
+                    .secure(cookieSecure)
                     .path("/")
-                    .sameSite("Lax")
+                    .sameSite(cookieSameSite)
                     .maxAge(60 * 60)
                     .build();
             response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
@@ -84,9 +91,9 @@ public class UserServiceImpl implements UserService {
             // set refresh token to cookie
             ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", refreshToken)
                     .httpOnly(true)
-                    .secure(false)
+                    .secure(cookieSecure)
                     .path("/")
-                    .sameSite("Lax")
+                    .sameSite(cookieSameSite)
                     .maxAge(60 * 60 * 24 * 7)
                     .build();
             response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
@@ -111,9 +118,9 @@ public class UserServiceImpl implements UserService {
                 // set new access token to cookie
         ResponseCookie accessCookie = ResponseCookie.from("jwt", newAccessToken)
                 .httpOnly(true)
-                .secure(false)
+                .secure(cookieSecure)
                 .path("/")
-                .sameSite("Lax")
+                .sameSite(cookieSameSite)
                 .maxAge(60 * 60)
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
